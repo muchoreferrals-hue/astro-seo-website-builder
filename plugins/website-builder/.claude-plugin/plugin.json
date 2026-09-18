@@ -1,6 +1,6 @@
 {
   "name": "website-builder",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Builds SEO-optimized Astro service business websites deployed to Cloudflare",
   "author": {
     "name": "Nicolas Gorrono",
