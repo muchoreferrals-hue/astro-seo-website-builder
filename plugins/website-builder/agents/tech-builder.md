@@ -224,6 +224,55 @@ The footer is not an afterthought. Build it with:
 
 ---
 
+## Core Web Vitals Engineering
+
+The site must pass Google's "Good" thresholds: **LCP ≤ 2.5s**, **INP ≤ 200ms**, **CLS < 0.1**. These are engineering constraints, not aspirations — apply them as you build, not as a post-hoc fix.
+
+### LCP (Largest Contentful Paint)
+
+- The hero image is almost always the LCP element. It must use `loading="eager"` and `fetchpriority="high"` (already specified in the `<Image>` pattern below) — never `loading="lazy"` on the hero.
+- Preload the hero image font and the hero image itself in `BaseHead.astro`: `<link rel="preload" as="image" href={heroImageSrc} />` for the homepage, and a preload for the primary display font (`font-display: swap` in `@font-face`, or use Astro/Google Fonts' built-in preload support).
+- Never block the hero's render on client-side JS. The split-word text reveal and Ken Burns effects animate content that is already painted — they must not delay first paint.
+- Keep the critical CSS path small: Tailwind's generated CSS is fine, but don't add render-blocking third-party stylesheets in `<head>`.
+
+### INP (Interaction to Next Paint)
+
+- Keep the main thread free. GSAP timelines on scroll/load are fine (they're not blocking user input), but avoid heavy synchronous work in click/input handlers — the contact form's validation and submit handlers must stay lightweight and async.
+- Defer non-critical JS. Anything not needed for the first interaction (marquee testimonials, parallax) should not compete with a user's first tap/click.
+- Avoid layout thrashing in event handlers (reading `offsetWidth`/`scrollTop` then writing styles in the same handler) — batch reads and writes.
+
+### CLS (Cumulative Layout Shift)
+
+- Every `<Image>` must have explicit `width` and `height` (or `aspect-ratio` via CSS) so the browser reserves space before the image loads — the skeleton pattern below depends on this.
+- Never inject content above existing content after load (e.g., a late-loading banner) without reserving its space up front.
+- Web fonts must not cause a visible reflow: use `font-display: swap` with a fallback font stack sized closely to the display font to minimize the swap jump.
+
+Run a Lighthouse pass (or check the numbers Impeccable/the SEO audit surface) against these three numbers before considering a build done.
+
+---
+
+## Image Format: WebP Only, With Conversion
+
+Every image in the final site must be `.webp`. `nano-banana-pro` (the image-generation skill used in STEP 7 of the build) **outputs PNG by default**, not WebP — this is a real gap you must close yourself, not assume is handled.
+
+After each `nano-banana-pro` generation call, convert the output to WebP before referencing it anywhere in the site:
+
+```bash
+npx sharp-cli -i generated-image.png -o public/images/hero.webp -f webp -q 85
+```
+
+(`sharp` is already a transitive Astro dependency via `astro:assets`, so `sharp-cli` installs cleanly alongside it: `npm install -D sharp-cli`.) If a `sharp-cli` invocation fails for any reason, fall back to a small Node script using the `sharp` package directly (`sharp('in.png').webp({ quality: 85 }).toFile('out.webp')`) rather than leaving a PNG in place.
+
+Never leave a `.png` reference in `site-config.ts`, content collection frontmatter, or component code — every `src` must point at the converted `.webp` file. Delete the intermediate PNG once the WebP conversion succeeds so it can't accidentally get referenced.
+
+---
+
+## Impeccable Design Hook
+
+If the project has Impeccable's design hook installed, it runs automatically after you write or edit UI files (components, layouts, pages) and feeds findings back in real time — you may see its output appended after a file write. Treat those findings as you would a linter: fix real issues (spacing inconsistencies, off-palette colors, contrast problems, AI-design-slop patterns) before moving to the next file rather than batching fixes for later. This is a live check during generation and is complementary to — not a replacement for — the final `/impeccable audit` pass run later in the build process.
+
+---
+
 ## Project File Structure
 
 Build every file listed below. Do not skip any.

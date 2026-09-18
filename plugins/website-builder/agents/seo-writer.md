@@ -22,6 +22,7 @@ You will receive full business data (name, services, locations, USPs, tone, test
 6. **40% minimum differentiation** between any two similar pages (service A vs service B, city A vs city B). Track this actively.
 7. **Every service page and location page gets 3 CTAs**: above the fold, mid-page, bottom.
 8. **Match the tone** specified in onboarding. Professional = measured, credible. Friendly = warm, conversational. Authoritative = confident, expert. Local = community-first.
+9. **45% minimum genuinely unique, local-area-specific content on every location page.** This is a different axis from rule #6. Rule #6 (40% differentiation) measures how different Location A's page is FROM Location B's page. This rule measures how much of a SINGLE location page's own content is actually tied to that specific place — not generic service copy that happens to have the city name inserted. A page can pass the 40% cross-page check while still failing this one if both pages are built from the same generic template with only the city swapped. See the "Local Specificity Requirement" under Location Page Content below for the method.
 
 ---
 
@@ -203,6 +204,25 @@ List all suburbs/neighborhoods covered from this location. Format as a clean bul
 
 **Local testimonial (if provided, or write a realistic placeholder marked as [TESTIMONIAL PLACEHOLDER]):**
 Must be location-specific. Reference the suburb or service.
+
+### Local Specificity Requirement (45% Minimum)
+
+Separate from the 40% cross-page differentiation rule (Core Rule #6 / Differentiation Tracking below), at least 45% of each location page's own word count must be content that is genuinely tied to that specific place — content that would be factually wrong or nonsensical if the city name were swapped for another one. This exists because Google can treat near-duplicate location pages as doorway pages even when they pass a cross-page uniqueness check, if every page is really the same generic template with a find-and-replace on the city name.
+
+**What counts as local-specific (goes toward the 45%):**
+- Named suburbs, neighborhoods, landmarks, streets, or council/district areas
+- References to that city's housing stock, climate, terrain, or infrastructure that plausibly affects the service (e.g., "heritage-listed properties," "older cast-iron pipes common in Fitzroy's Victorian terraces," "coastal salt-air corrosion")
+- The business's specific history or presence in that area (how long serving it, a local landmark near their base, a local partnership)
+- Locally-scoped response times, coverage details, or service-area specifics
+- A location-specific testimonial referencing a real suburb or local job
+- Local competitive or market context (e.g., "one of the few licensed [service] providers still taking same-day jobs in [suburb]")
+
+**What does NOT count (this is the generic remainder, capped at 55%):**
+- Service descriptions that are identical in substance to what's on other location pages, just with the city name inserted
+- Generic trust/quality claims that make no reference to place ("licensed and insured," "upfront pricing" — fine to include, but they don't count toward the 45%)
+- FAQ answers that could apply to any city verbatim
+
+**Method:** After drafting a location page, mark each sentence as LOCAL or GENERIC using the criteria above. Count words in LOCAL sentences vs. total word count for the page's body content (intro + services-offered blurbs + coverage areas + testimonial). If LOCAL is under 45%, add more of the local-specific content types listed above — most often this means researching or plausibly inferring more real suburb names, landmarks, or area-specific service context — rather than padding with more generic copy elsewhere.
 
 ---
 

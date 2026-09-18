@@ -12,6 +12,26 @@ Work through the following steps in order. Do NOT skip steps.
 
 ---
 
+## STEP 0: Niche & Market Validation
+
+Before the onboarding questionnaire, validate that the niche and target city (or cities) are actually worth building for.
+
+**Q0a -- Niche/service:** "What's the core service/niche this site is for? (e.g. 'emergency plumber', 'family dentist')"
+
+**Q0b -- Target cities:** "Which city or cities are you targeting? List them all — I'll validate each one."
+
+Then, for each city, spawn a **niche-scout** agent via the Task tool (in parallel if multiple cities are given), passing it the niche/service and that city. Wait for all of them to complete.
+
+Present the combined report to the user exactly as the agent(s) returned it (per-city verdicts + an overall recommendation if more than one city was checked).
+
+**Soft gate:** if any city's verdict is RECONSIDER, ask: "One or more cities came back RECONSIDER — see the reasoning above. Continue building anyway? (YES to continue / NO to stop here so you can pick different cities)." Wait for an explicit answer before proceeding. A PROCEED or PROCEED WITH CAUTION verdict does not require this pause — move straight to STEP 1, but still show the full report so the market context is visible before onboarding starts.
+
+This is never a hard block. If the user says continue, proceed to STEP 1 regardless of the verdict — niche-scout informs the decision, it doesn't make it.
+
+Keep the SEO Utils workspace ID(s) niche-scout reports — they're needed later for the CLAUDE.md generated in STEP 3.
+
+---
+
 ## STEP 1: Onboarding Questionnaire
 
 Ask the following questions using `AskUserQuestion`. Ask them one at a time and wait for each answer before continuing.
@@ -81,7 +101,7 @@ If the user said "choose for me", select a professional palette appropriate to t
 Run the following commands in sequence using the Bash tool. Run them from the current working directory (the project folder where `/build-website` was invoked).
 
 ```bash
-npm create astro@latest . -- --template minimal --typescript strict --no-install --git false
+npm create astro@latest . -- --template minimal --typescript strict --no-install --git true
 ```
 
 Then:
@@ -101,6 +121,46 @@ npm install -D astro-robots-txt
 ```
 
 After each command, check for errors before proceeding. If a command fails, diagnose and fix the issue before continuing.
+
+This scaffold now initializes a real local git repo (`--git true`). Nothing gets pushed anywhere automatically — see STEP 9 for the manual push instructions once Andy has reviewed the site.
+
+### Generate CLAUDE.md
+
+Nothing else in this build process generates a `CLAUDE.md` for the new site, so write one now at the project root (`CLAUDE.md`), before spawning the specialist agents, so it's in place for the whole build. Populate it from data already in hand at this point (business data from STEP 1, niche-scout findings and workspace ID from STEP 0):
+
+```markdown
+# [Business Name] — Site Notes for Claude
+
+## Tech Stack
+- Astro (output: 'static', per-route `export const prerender = false` for on-demand routes)
+- @astrojs/cloudflare adapter, deployed to Cloudflare Workers (not Pages)
+- Tailwind CSS
+- GSAP + ScrollTrigger for animation
+- Brevo (REST API, no SDK) for the contact form's transactional email
+- Images generated via the `nano-banana-pro` skill, converted PNG→WebP with `sharp`/`sharp-cli`
+
+## Image Rule
+Every image in this site must be `.webp`. `nano-banana-pro` outputs PNG by default — always convert before referencing an image anywhere in the codebase. Never commit or reference a `.png` in `src/` or `public/images/`.
+
+## Core Web Vitals Targets
+- LCP ≤ 2.5s (Google's actual "Good" threshold — not the looser 3s sometimes quoted)
+- INP ≤ 200ms
+- CLS < 0.1
+
+## SEO Target
+99%+ on the internal SEO audit checklist (seo-auditor agent) before shipping. Every location page must carry at least 45% genuinely unique, local-area-specific content (distinct from the standard 40% cross-page differentiation rule).
+
+## SEO Utils Workspace
+This site's market research and ongoing rank tracking live in the SEO Utils workspace: **[workspace name from niche-scout, e.g. "Emergency Plumber — Austin, TX"]** (id: `[workspace id]`). Reuse this workspace for all future SEO Utils calls on this site — do not create a new one.
+
+## Niche Scout Findings
+See the niche-scout report from STEP 0 for the market validation this site was built on (map pack saturation, keyword opportunities, content/backlink gaps). Summary: [1-2 sentence recap of the recommendation and why].
+
+## Design Quality
+Design QA is gated by Impeccable (`/impeccable audit`) as the final design-slop check — see STEP 8.5 of the build process.
+```
+
+If more than one city was targeted, either generate one CLAUDE.md per site (if each city gets its own project) or list all workspaces/findings if this is a single multi-location site — match whatever structure Andy chose in STEP 1 Q3.
 
 ---
 
@@ -133,7 +193,7 @@ Pass this context:
 
 Provide the same full business data. Instruct it to write all page content: titles, meta descriptions, H1s, body copy, FAQs, CTAs, stat items, and breadcrumb labels for every page (homepage, about, contact, services index, each service page, locations index, each location page).
 
-Pass the same context as tech-builder, plus the design personality preference so the writer knows to keep hero H1s short (4-8 words) for large-scale display and to structure stats as number + label pairs.
+Pass the same context as tech-builder, plus the design personality preference so the writer knows to keep hero H1s short (4-8 words) for large-scale display and to structure stats as number + label pairs. Also pass the niche-scout findings from STEP 0 (uncontested keyword clusters, true market gaps) so the writer can target that language and those topics directly in copy, not just generic service/location content.
 
 Wait for both agents to complete before proceeding to Step 5.
 
@@ -261,7 +321,19 @@ Then report to the user:
 - Build status: SUCCESS
 - All pages generated (list them)
 - All images generated (list them)
-- Next steps: deploy to Cloudflare Workers, set the Brevo API key as a secret, submit sitemap to Google Search Console
+
+---
+
+## STEP 8.5: Design Slop Audit (Impeccable)
+
+Impeccable's design hook (if installed) already reviewed files in real time as tech-builder wrote them in STEP 4/5 — see tech-builder's instructions. This step is a final, holistic pass across representative pages, run once the build itself is validated.
+
+1. Check whether this project has already been initialized for Impeccable (it creates a local context/config location the first time `/impeccable init` runs — check with Glob/Bash before assuming). If not yet initialized, run `/impeccable init` first so it has design context for this specific codebase; skip this if it's already set up.
+2. Run `/impeccable audit` against a representative sample: the homepage, one service page, one location page, and the contact page.
+3. Review the findings. Fix real design-slop issues (generic AI-look spacing, inconsistent components, off-brand color drift, and similar) directly via tech-builder or Edit.
+4. Re-run the audit on any page you fixed until it comes back clean, or until remaining findings are stylistic judgment calls you've deliberately decided to keep — note those in the handoff report rather than looping on them indefinitely.
+
+This is a quality gate, not a hard blocker on the whole build.
 
 ---
 
@@ -292,15 +364,27 @@ Present a clean summary to the user:
 - Sitemap: /sitemap-index.xml
 - Robots.txt: /robots.txt
 
+### Design QA
+- Impeccable audit: [PASS / findings logged and accepted — see below]
+- CLAUDE.md written to project root with tech stack, WebP rule, Core Web Vitals targets, SEO Utils workspace, and niche-scout findings
+
+### Market Validation
+- Niche-scout verdict: [PROCEED / PROCEED WITH CAUTION / RECONSIDER — as decided in STEP 0]
+- SEO Utils workspace: [workspace name] (id: [id])
+
 ### Next Steps
-1. Deploy: `npx wrangler deploy`
-2. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file)
-3. Point your domain in Cloudflare Dashboard
-4. Submit sitemap in Google Search Console
-5. Add your Google Business Profile link
+Everything so far is local only — nothing has been pushed to GitHub or deployed. This project now has a real local git repo (initialized in STEP 3); review the site (`npm run dev`) before doing anything further.
+
+1. When you're happy with it, commit it: `git add -A && git commit -m "Initial site build"`.
+2. Push to GitHub: create a repo (via `gh repo create` or on github.com), then `git remote add origin <repo-url>` and `git push -u origin main`.
+3. Deploy: `npx wrangler deploy`
+4. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file)
+5. Point your domain in Cloudflare Dashboard
+6. Submit sitemap in Google Search Console
+7. Add your Google Business Profile link
 
 ### Verify Your Site
-- Lighthouse: target Performance >90, SEO 100, Accessibility >90
+- Lighthouse: target Performance >90, SEO 100, Accessibility >90 — check LCP ≤2.5s, INP ≤200ms, CLS <0.1 specifically
 - Schema: Google Rich Results Test
 - Contact form: test end-to-end submission
 ```

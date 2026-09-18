@@ -130,6 +130,7 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 - [ ] **HARD FAIL:** Each service page has at minimum 40% unique content vs other service pages
   - Check: heroHeading, problem intro, process steps, FAQs must all differ
 - [ ] **HARD FAIL:** Each location page has a city-specific intro paragraph that references the actual city name at least twice
+- [ ] **HARD FAIL:** Each location page has at minimum 45% of its own body content (intro + services-offered blurbs + coverage areas + testimonial) that is genuinely local-specific — named suburbs/landmarks/districts, locally-relevant service context, or the business's specific history in that area — rather than generic copy with only the city name swapped. This is a separate check from the 40% cross-page differentiation check above: a page can pass that one while still failing this one if every location page follows the same generic template. Mark each sentence LOCAL or GENERIC per the seo-writer spec's criteria and report the approximate percentage.
 - [ ] No two service pages share the same FAQs
 
 ### 4.3 CTAs
@@ -150,6 +151,7 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 
 ### 5.1 Image Component Usage
 - [ ] **HARD FAIL:** No `<img>` tags anywhere in `.astro` files (must use Astro's `<Image>` component)
+- [ ] **HARD FAIL:** Every referenced image file is `.webp` — no `.png`, `.jpg`, or `.jpeg` paths in `site-config.ts`, content collection frontmatter, or `.astro` component code. `nano-banana-pro` outputs PNG by default, so a `.png` reference here means the tech-builder's PNG→WebP conversion step was skipped.
 - [ ] Every `<Image>` component has `width` and `height` attributes set (prevent CLS)
 - [ ] Every `<Image>` component has a non-empty, descriptive `alt` attribute
 - [ ] Hero images use `loading="eager"` and `fetchpriority="high"`
@@ -166,6 +168,16 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 - [ ] GSAP animations are wrapped in `document.addEventListener('astro:page-load', ...)`
 - [ ] `prefers-reduced-motion` CSS media query is present in global styles or components with heavy animation
 - [ ] `will-change: transform` only applied to elements actively being animated
+
+### 5.4 Core Web Vitals
+
+These are numeric targets, not stylistic preferences — the site must be engineered to hit them. Google's actual "Good" thresholds are stricter than "under 3 seconds" for LCP; use these numbers:
+
+- [ ] **Target: LCP ≤ 2.5s.** Verify the hero image (the near-certain LCP element) uses `loading="eager"` and `fetchpriority="high"`, and that `BaseHead.astro` preloads it (and the primary display font) rather than leaving it to discover late.
+- [ ] **Target: INP ≤ 200ms.** Spot-check the contact form's submit/validation handlers and any click handlers for heavy synchronous work; flag anything that could block the main thread on interaction.
+- [ ] **Target: CLS < 0.1.** Verify every `<Image>` has explicit `width`/`height` (already checked in 5.1) and that web fonts use `font-display: swap` with a close-matching fallback stack.
+
+Where possible, run or reference a Lighthouse pass and report the actual measured numbers alongside these checks rather than relying solely on static code inspection.
 
 ---
 
@@ -205,6 +217,8 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 ## Checklist Section 8: Design Quality
 
 Every site must meet the visual standard of an award-winning studio. These checks verify that design specifications from the tech-builder were properly implemented.
+
+Note: this section covers structural/specification compliance (the checks below). A separate, complementary check for AI-design-slop — generic-looking spacing, inconsistent components, off-brand color drift, and similar visual-quality issues that a checklist can't easily catch — runs via Impeccable (`/impeccable audit`) as STEP 8.5 of the build process, after this audit passes. Do not skip Section 8 on the assumption Impeccable will catch it; the two checks cover different things.
 
 ### 8.1 Visual Depth
 - [ ] Colored shadows: search for `shadow-brand` or brand-colored `rgba` shadows. No default gray `shadow-md`, `shadow-lg`, etc. on visible elements (except as part of transitions).
