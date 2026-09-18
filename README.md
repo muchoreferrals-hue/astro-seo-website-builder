@@ -4,11 +4,11 @@ A Claude Code plugin that acts as a full web agency team. Run one command and ge
 
 ## What it builds
 
-- Full Astro project with Tailwind CSS, Cloudflare Pages adapter, sitemap, robots.txt
+- Full Astro project with Tailwind CSS, Cloudflare Workers adapter, sitemap, robots.txt
 - Every page: homepage, about, contact, service pages, location pages
 - Schema markup: LocalBusiness, Service, FAQ, BreadcrumbList, WebSite
 - GSAP animations: hero entrance, scroll reveals, stat counters, card staggering
-- Contact form with Cloudflare Workers backend via Resend
+- Contact form with Cloudflare Workers backend via Brevo
 - AI-generated WebP images for every hero, OG image, and team photo
 - `llms.txt` for AI crawler readability
 
@@ -17,7 +17,7 @@ A Claude Code plugin that acts as a full web agency team. Run one command and ge
 - [Claude Code](https://claude.ai/code) installed
 - Node.js 18+
 - A Cloudflare account (free tier works)
-- A [Resend](https://resend.com) account for contact form email delivery
+- A [Brevo](https://www.brevo.com) account for contact form email delivery
 - The `nano-banana-pro` skill active in Claude Code (for AI image generation)
 
 ## Install
@@ -63,12 +63,17 @@ The plugin spawns three specialist agents:
 After the build completes:
 
 ```bash
-npx wrangler pages deploy ./dist
+npx wrangler deploy
+```
+
+Then set the email secret (never put this in `wrangler.jsonc` — it stays out of source control this way):
+
+```bash
+npx wrangler secret put BREVO_API_KEY
 ```
 
 Then in Cloudflare Dashboard:
 - Point your domain
-- Add `RESEND_API_KEY` environment variable
 - Submit `/sitemap-index.xml` to Google Search Console
 
 ## Quality targets

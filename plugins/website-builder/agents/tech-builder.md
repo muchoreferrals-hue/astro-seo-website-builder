@@ -299,9 +299,14 @@ import robotsTxt from 'astro-robots-txt';
 
 export default defineConfig({
   site: 'https://YOUR_DOMAIN.com',  // Replace with actual domain or placeholder
-  output: 'hybrid',
+  // 'static' prerenders every page by default; pages/api/contact.ts opts itself
+  // out with `export const prerender = false`, so it still runs on-demand.
+  // This is the current replacement for the old 'hybrid' output mode.
+  output: 'static',
   adapter: cloudflare({
-    imageService: 'cloudflare',
+    // Leave imageService unset to use the adapter's default ('cloudflare-binding'),
+    // which uses Cloudflare's auto-provisioned Images binding. Do not set a custom
+    // image.service.entrypoint below — that pattern predates the current adapter.
     platformProxy: { enabled: true },
   }),
   integrations: [
@@ -309,9 +314,6 @@ export default defineConfig({
     sitemap(),
     robotsTxt(),
   ],
-  image: {
-    service: { entrypoint: 'astro/assets/services/cloudflare' },
-  },
 });
 ```
 
@@ -325,10 +327,12 @@ export default defineConfig({
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist"
-  },
-  "vars": {
-    "RESEND_API_KEY": ""
   }
+  // Do NOT put BREVO_API_KEY here under "vars" — that stores it in plaintext
+  // in source control. Set it as a secret instead, after first deploy:
+  //   npx wrangler secret put BREVO_API_KEY
+  // It's then available at runtime as import.meta.env.BREVO_API_KEY, same as
+  // any other binding — no entry in wrangler.jsonc needed for secrets.
 }
 ```
 
@@ -845,26 +849,34 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Invalid email address' }), { status: 400 });
   }
 
-  const { Resend } = await import('resend');
-  const resend = new Resend(import.meta.env.RESEND_API_KEY);
-
-  const { error } = await resend.emails.send({
-    from: 'Website Contact Form <noreply@YOUR_DOMAIN.com>',
-    to: ['BUSINESS_EMAIL'],  // Replace from siteConfig
-    subject: `New enquiry from ${name}${service ? ` - ${service}` : ''}`,
-    html: `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-      <p><strong>Service:</strong> ${service || 'Not specified'}</p>
-      <p><strong>Message:</strong></p>
-      <p>${message.replace(/\n/g, '<br>')}</p>
-    `,
+  // Brevo's transactional email API is a plain REST endpoint — no SDK needed,
+  // which keeps the Worker bundle smaller. BREVO_API_KEY comes from a Wrangler
+  // secret (see wrangler.jsonc above), never a hardcoded value.
+  const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': import.meta.env.BREVO_API_KEY,
+      'content-type': 'application/json',
+      'accept': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'Website Contact Form', email: 'noreply@YOUR_DOMAIN.com' },
+      to: [{ email: 'BUSINESS_EMAIL' }],  // Replace from siteConfig
+      subject: `New enquiry from ${name}${service ? ` - ${service}` : ''}`,
+      htmlContent: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+        <p><strong>Service:</strong> ${service || 'Not specified'}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+      `,
+    }),
   });
 
-  if (error) {
-    console.error('Email send error:', error);
+  if (!brevoResponse.ok) {
+    console.error('Email send error:', await brevoResponse.text());
     return new Response(JSON.stringify({ error: 'Failed to send message' }), { status: 500 });
   }
 

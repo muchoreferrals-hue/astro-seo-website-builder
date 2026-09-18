@@ -96,7 +96,7 @@ npx astro add tailwind cloudflare sitemap --yes
 
 Then:
 ```bash
-npm install gsap @astrojs/image resend
+npm install gsap
 npm install -D astro-robots-txt
 ```
 
@@ -261,7 +261,7 @@ Then report to the user:
 - Build status: SUCCESS
 - All pages generated (list them)
 - All images generated (list them)
-- Next steps: set up Cloudflare Pages, configure environment variables (Resend API key), submit sitemap to Google Search Console
+- Next steps: deploy to Cloudflare Workers, set the Brevo API key as a secret, submit sitemap to Google Search Console
 
 ---
 
@@ -293,8 +293,8 @@ Present a clean summary to the user:
 - Robots.txt: /robots.txt
 
 ### Next Steps
-1. Deploy: `npx wrangler pages deploy ./dist`
-2. Set env var in Cloudflare: RESEND_API_KEY=your_key
+1. Deploy: `npx wrangler deploy`
+2. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file)
 3. Point your domain in Cloudflare Dashboard
 4. Submit sitemap in Google Search Console
 5. Add your Google Business Profile link

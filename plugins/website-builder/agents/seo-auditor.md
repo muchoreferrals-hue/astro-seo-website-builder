@@ -28,7 +28,7 @@ You will be given the full list of generated project files. Read every relevant 
 
 ### 1.1 Core Config
 - [ ] `astro.config.mjs` has `site` URL set to a non-localhost, non-placeholder value (or note it as a placeholder for user to update)
-- [ ] `astro.config.mjs` has `output: 'hybrid'`
+- [ ] `astro.config.mjs` has `output: 'static'`
 - [ ] `astro.config.mjs` includes sitemap integration
 - [ ] `astro.config.mjs` includes Cloudflare adapter
 - [ ] `wrangler.jsonc` exists with `main`, `compatibility_flags`, and `assets` binding
@@ -183,7 +183,7 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 - [ ] API route validates all required fields server-side
 - [ ] API route checks honeypot field
 - [ ] Basic email format validation present
-- [ ] Uses Resend for email sending
+- [ ] Uses Brevo for email sending (plain `fetch` to `https://api.brevo.com/v3/smtp/email`, no SDK)
 - [ ] Email recipient is populated from `siteConfig` (not hardcoded placeholder)
 
 ---
