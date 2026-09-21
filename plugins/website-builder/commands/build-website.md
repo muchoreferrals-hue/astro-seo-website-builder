@@ -32,6 +32,23 @@ Keep the SEO Utils workspace ID(s) niche-scout reports — they're needed later 
 
 ---
 
+## STEP 0.5: Design Source (Client-Supplied Design Check)
+
+Before the onboarding questionnaire, find out whether this build has a client-approved design to match, or should use the studio's default design system.
+
+**Q0c — Design source:** "Do you have a Claude Design export (an approved HTML/CSS/JS mockup) you want this site built to match? If yes, give me the file path or paste the exported code. If no, I'll design it using our default bold, animated studio aesthetic — you'll pick a design personality in the next step."
+
+**If a design export is supplied:**
+1. Read the export file(s) in full (HTML/CSS/JS).
+2. Decode/extract: the color palette (hex values for primary/secondary/accent/neutral), font choices, layout patterns (hero structure, card style, section rhythm), component patterns (buttons, forms, nav), and the overall level of motion/animation used (none, subtle, or heavy).
+3. This extracted spec is now the **authoritative design reference** for the whole build. It supersedes STEP 1 Q6 (color palette) and Q6b (design personality) — skip asking those, or ask them only to fill gaps the export doesn't resolve (e.g. it doesn't specify a personality for pages/sections the mockup didn't cover).
+4. It also supersedes tech-builder's own default "Design Philosophy" system (GSAP animation, glass-morphism, gradient mesh, bento grids, etc. — see tech-builder.md). Tell tech-builder explicitly in STEP 4 that this build is in **client-supplied-design mode**: implement the decoded export faithfully as real Astro components, not the default system.
+5. Note this permanently in the generated CLAUDE.md (STEP 3): mark the design section `**Client-supplied design (permanent).**` and describe the aesthetic actually delivered, so future work on this codebase treats the plainer/different look as the intended, final direction rather than a placeholder to be "improved" back toward the default maximalist style.
+
+**If no design export is supplied:** proceed normally — Q6/Q6b in STEP 1 drive the design, and tech-builder's default Design Philosophy system applies in full.
+
+---
+
 ## STEP 1: Onboarding Questionnaire
 
 Ask the following questions using `AskUserQuestion`. Ask them one at a time and wait for each answer before continuing.
@@ -72,9 +89,14 @@ Or say 'choose for me' and I'll pick the best fit based on your industry and ton
 **Q9 -- Business hours:**
 "What are your hours of operation? Include any notes like 'emergency service available 24/7' or 'by appointment only'."
 
+**Q10 -- Analytics:**
+"Do you already have a Google Tag Manager container? If yes, give me the Container ID (format `GTM-XXXXXXX`) and I'll wire it into the site now. If you don't have one yet, say so — I'll give you setup instructions in the final handoff instead, and you can send me the ID afterward to wire in later.
+
+Same question for Google Analytics 4: do you have a Measurement ID (format `G-XXXXXXXXXX`)? This isn't required to build the site — it only matters once you're ready to connect GTM to GA4, which is a manual step in Google's dashboards I'll walk you through at handoff either way."
+
 ---
 
-Once all 10 questions are answered (Q1 through Q9, including Q6b), confirm the collected information back to the user in a structured summary and ask: "Does this look correct? Type YES to continue or tell me what to change."
+Once all 11 questions are answered (Q1 through Q10, including Q6b), confirm the collected information back to the user in a structured summary and ask: "Does this look correct? Type YES to continue or tell me what to change."
 
 Do not proceed until the user confirms.
 
@@ -157,7 +179,10 @@ This site's market research and ongoing rank tracking live in the SEO Utils work
 See the niche-scout report from STEP 0 for the market validation this site was built on (map pack saturation, keyword opportunities, content/backlink gaps). Summary: [1-2 sentence recap of the recommendation and why].
 
 ## Design Quality
-Design QA is gated by Impeccable (`/impeccable audit`) as the final design-slop check — see STEP 8.5 of the build process.
+[IF a design export was supplied in STEP 0.5: "**Client-supplied design (permanent).** The site was built to match a client-approved Claude Design export (a decoded HTML/CSS/JS mockup) implemented as real Astro pages/components. [1-2 sentences describing the actual delivered aesthetic — e.g. flat/conversion-focused vs. the studio default]. This supersedes tech-builder's default maximalist design system; treat this look as the intended, final direction, not a placeholder." ELSE: standard note — "Design QA is gated by Impeccable (`/impeccable audit`) as the final design-slop check — see STEP 8.5 of the build process."]
+
+## Analytics
+[IF GTM Container ID was provided in Q10: "Google Tag Manager (`[GTM-XXXXXXX]`) is installed site-wide in `src/layouts/BaseLayout.astro` — script in `<head>`, noscript right after `<body>`. The contact form (`ContactForm.astro`) pushes a `contact_form_submit` event to `dataLayer` on successful submission, for GTM to catch as a lead-conversion trigger." ELSE: "No GTM container was provided at build time. See the handoff report's Analytics Setup checklist for how to add it — ask Claude to wire it into `BaseLayout.astro` once you have a Container ID."]
 ```
 
 If more than one city was targeted, either generate one CLAUDE.md per site (if each city gets its own project) or list all workspaces/findings if this is a single multi-location site — match whatever structure Andy chose in STEP 1 Q3.
@@ -183,7 +208,9 @@ Pass this context:
 - Business hours
 - Any testimonials
 - Tone preference
-- **Design personality preference from Q6b** (bold/warm/sleek/energetic). This informs layout choices, animation intensity, shape language, and color treatment. Specifically:
+- **GTM Container ID and GA4 Measurement ID from Q10**, if provided. If a GTM Container ID was given, instruct tech-builder to install the standard GTM snippet (head script + body noscript) site-wide in `BaseLayout.astro` and wire a `dataLayer.push({ event: 'contact_form_submit', ... })` call into `ContactForm.astro`'s successful-submit handler, exactly as described in tech-builder's Analytics & Conversion Tracking section. If no ID was given, skip this — it gets added later on request.
+- **If STEP 0.5 produced a client-supplied design spec:** pass the full decoded spec (palette, fonts, layout/component patterns, motion level) and explicitly instruct tech-builder to build in **client-supplied-design mode** — implement that spec faithfully instead of its own default Design Philosophy system below. Skip the design-personality instructions in that case.
+- **Otherwise, design personality preference from Q6b** (bold/warm/sleek/energetic). This informs layout choices, animation intensity, shape language, and color treatment. Specifically:
   - **Bold and modern:** sharp clip-paths, high-contrast gradients, strong diagonal section dividers, heavier shadows, aggressive hover states
   - **Warm and approachable:** wave/curve section dividers, softer rounded corners (rounded-3xl to rounded-4xl), gentler animations (longer durations, softer easing), warm-toned gradient meshes
   - **Sleek and minimal:** more whitespace (py-32+), fewer gradient meshes, subtle animations (shorter distances, quicker durations), thin accent lines instead of bold bars
@@ -380,11 +407,33 @@ Everything so far is local only — nothing has been pushed to GitHub or deploye
 3. Deploy: `npx wrangler deploy`
 4. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file)
 5. Point your domain in Cloudflare Dashboard
-6. Submit sitemap in Google Search Console
-7. Add your Google Business Profile link
+
+### Analytics Setup (Manual — Google Dashboards)
+Claude cannot log into Google's dashboards directly, so these are done by you, with Claude able to write any supporting code (GTM snippet install, dataLayer events) on request.
+
+**If no GTM Container ID was provided at onboarding:**
+1. Create a GTM container at tagmanager.google.com for this domain, note the Container ID (`GTM-XXXXXXX`).
+2. Send it to Claude — it'll install the snippet in `BaseLayout.astro` and wire the `contact_form_submit` dataLayer event, then redeploy.
+
+**Connect GTM to GA4** (once both the GTM container and a GA4 property exist):
+1. In GTM, **Tags → New → Google Tag**. Paste your GA4 Measurement ID (`G-XXXXXXXXXX`). Trigger: **Initialization - All Pages**. Save.
+2. **Tags → New → Google Analytics: GA4 Event**. Paste the same Measurement ID (current GTM pairs by matching ID, not a dropdown reference). Event Name: `generate_lead`.
+3. **Triggers → New → Custom Event**, event name `contact_form_submit` — this is what the site's contact form already fires on success.
+4. Set that trigger on the GA4 Event tag. Save.
+5. Top right → **Submit → Publish** (GTM changes only go live after publishing).
+6. In GA4 Admin → Events, mark `generate_lead` as a **key event** (conversion).
+
+**Google Search Console:**
+1. Add a **Domain property** (not URL-prefix) for the bare domain — covers http/https and www/non-www together. Verify via the DNS TXT record it gives you, added at your DNS provider.
+2. Submit the sitemap: `/sitemap-index.xml`.
+3. URL-inspect and request indexing for the homepage and each location/service page.
+
+**Link GA4 to Search Console:** GA4 Admin → Product Links → Search Console Links → link this property, so query/impression data surfaces inside GA4 reports.
+
+**Google Business Profile:** add/confirm your listing with NAP (name/address/phone) matching the site footer exactly.
 
 ### Verify Your Site
 - Lighthouse: target Performance >90, SEO 100, Accessibility >90 — check LCP ≤2.5s, INP ≤200ms, CLS <0.1 specifically
 - Schema: Google Rich Results Test
-- Contact form: test end-to-end submission
+- Contact form: test end-to-end submission, then confirm in GTM Preview mode and GA4 Realtime that `contact_form_submit` / `generate_lead` actually fire
 ```

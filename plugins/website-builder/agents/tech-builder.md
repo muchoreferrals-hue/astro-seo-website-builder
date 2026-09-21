@@ -12,6 +12,19 @@ You will be given all business data (name, services, locations, colors, contact 
 
 ---
 
+## Client-Supplied Design Override
+
+If the orchestrator tells you this build is in **client-supplied-design mode**, it means the client provided a Claude Design export (an approved HTML/CSS/JS mockup) and it has already been decoded into a design spec (palette, fonts, layout/component patterns, motion level). In that mode:
+
+- Implement the supplied spec faithfully as real Astro pages/components. Match its actual layout patterns, spacing, component style, and level of motion — do not layer the default Design Philosophy/GSAP animation system below on top of it.
+- If the export uses a plain, flat, restrained aesthetic (no gradients, no glass-morphism, simple grids), build exactly that. "Award-winning studio" quality in this mode means faithful, polished implementation of the client's actual design — not maximalism.
+- Everything else in this file still applies unless it conflicts with the supplied design: Core Web Vitals engineering, WebP image rule, content collection schema, component prop contracts, schema markup, code quality standards, and the Analytics & Conversion Tracking section below.
+- Skip sections below that only make sense under the default system (gradient mesh, grain overlay, glass-morphism, GSAP animation system, page transitions, bento grids) unless the supplied design actually includes an equivalent.
+
+If no client-supplied-design mode was indicated, proceed with the default Design Philosophy system as normal.
+
+---
+
 ## Design Philosophy
 
 Every decision you make should reinforce these five principles. They are not optional extras; they are the baseline standard.
@@ -248,6 +261,35 @@ The site must pass Google's "Good" thresholds: **LCP ≤ 2.5s**, **INP ≤ 200ms
 - Web fonts must not cause a visible reflow: use `font-display: swap` with a fallback font stack sized closely to the display font to minimize the swap jump.
 
 Run a Lighthouse pass (or check the numbers Impeccable/the SEO audit surface) against these three numbers before considering a build done.
+
+---
+
+## Analytics & Conversion Tracking (Conditional on GTM Container ID)
+
+If the orchestrator passed a GTM Container ID, wire it in now. If none was passed, skip this section entirely — do not fabricate a placeholder ID.
+
+### GTM Installation
+
+Install the container in exactly one place, `BaseLayout.astro`, so it applies site-wide without per-page duplication:
+
+- Immediately after the opening `<head>` tag, insert the standard GTM head script (the boilerplate `(function(w,d,s,l,i){...})(window,document,'script','dataLayer','GTM-XXXXXXX');` snippet), with the real Container ID substituted in.
+- Immediately after the opening `<body ...>` tag, insert the standard GTM `<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX" ...></iframe></noscript>` snippet, same ID.
+
+Do not install GTM in `BaseHead.astro` or per-page — it must live in the single shared layout every page routes through.
+
+### Conversion Event
+
+On successful contact form submission (inside `ContactForm.astro`'s submit handler, after the success state is shown, not before), push a custom event to `dataLayer`:
+
+```javascript
+(window as any).dataLayer = (window as any).dataLayer || [];
+(window as any).dataLayer.push({
+  event: 'contact_form_submit',
+  form_service: /* value of the service field, if present */,
+});
+```
+
+Use `(window as any)` (or an equivalent narrow cast) rather than declaring a global `dataLayer` type — keep it scoped to this one call site. This event is what the client's GTM container catches via a Custom Event trigger to fire a GA4 `generate_lead` event; that trigger/tag configuration happens in GTM's dashboard (manual, documented in the orchestrator's handoff report), not in code.
 
 ---
 
@@ -657,6 +699,7 @@ Renders 2-3 absolutely positioned divs, each 400-600px, with `radial-gradient` f
 - Includes `<PageTransition />` (once, at top level)
 - Wraps with `<Header />` and `<Footer />`
 - Slot for page content
+- If a GTM Container ID was provided, includes the GTM head script and body noscript snippets — see Analytics & Conversion Tracking above
 
 ### Header.astro
 
@@ -748,6 +791,7 @@ Renders 2-3 absolutely positioned divs, each 400-600px, with `radial-gradient` f
 - On success: shows inline confirmation with the animated checkmark (no page reload)
 - On error: shows error message with retry option
 - POSTs to `/api/contact`
+- If a GTM Container ID was provided, pushes the `contact_form_submit` dataLayer event on success — see Analytics & Conversion Tracking above
 
 ### Breadcrumb.astro
 
