@@ -29,6 +29,7 @@ You will be given the full list of generated project files. Read every relevant 
 ### 1.1 Core Config
 - [ ] `astro.config.mjs` has `site` URL set to a non-localhost, non-placeholder value (or note it as a placeholder for user to update)
 - [ ] `astro.config.mjs` has `output: 'static'`
+- [ ] `astro.config.mjs` has `build: { inlineStylesheets: 'always' }` (avoids a render-blocking CSS request — see 5.4)
 - [ ] `astro.config.mjs` includes sitemap integration
 - [ ] `astro.config.mjs` includes Cloudflare adapter
 - [ ] `wrangler.jsonc` exists with `main`, `compatibility_flags`, and `assets` binding
@@ -52,6 +53,15 @@ You will be given the full list of generated project files. Read every relevant 
 - [ ] `BaseHead.astro` includes: `og:title`, `og:description`, `og:image`, `og:type`, `og:url`
 - [ ] `BaseHead.astro` includes Twitter card tags
 - [ ] OG image path references `/images/og-default.webp` (or equivalent)
+
+### 1.6 Meta Descriptions
+- [ ] **HARD FAIL:** Every page's `description` (and every `metaDescription` in content collections) is under 150 characters. PageSpeed/SERP snippet truncation starts well before 160 — treat 150 as the hard ceiling, not 160.
+- [ ] `content.config.ts` schema enforces this (`metaDescription: z.string().min(120).max(150)`), not just convention.
+
+### 1.7 llms.txt (Agentic Browsing)
+- [ ] `public/llms.txt` exists with an H1 and H2 sections
+- [ ] **HARD FAIL:** Every list item under each H2 is a markdown link (`[title](url): description`), not plain bullet text — PageSpeed's Agentic Browsing audit fails the file entirely ("File does not appear to contain any links") if it finds zero links, even if the content itself reads fine.
+- [ ] Every link target is a real, live route on the built site (check `dist/client/` if unsure) — services, locations, about, contact at minimum.
 
 ---
 
@@ -156,6 +166,7 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 - [ ] Every `<Image>` component has a non-empty, descriptive `alt` attribute
 - [ ] Hero images use `loading="eager"` and `fetchpriority="high"`
 - [ ] Non-hero images use `loading="lazy"`
+- [ ] Non-hero `<Image>` instances have `widths`/`sizes` set to the image's actual max rendered container width (not just the source file's intrinsic width) — PageSpeed's "Improve image delivery" audit flags any file shipped at more than ~1.5x its displayed CSS size.
 
 ### 5.2 Alt Text Quality
 - [ ] **HARD FAIL:** No empty alt attributes on non-decorative images
@@ -174,6 +185,7 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 These are numeric targets, not stylistic preferences — the site must be engineered to hit them. Google's actual "Good" thresholds are stricter than "under 3 seconds" for LCP; use these numbers:
 
 - [ ] **Target: LCP ≤ 2.5s.** Verify the hero image (the near-certain LCP element) uses `loading="eager"` and `fetchpriority="high"`, and that `BaseHead.astro` preloads it (and the primary display font) rather than leaving it to discover late.
+- [ ] **Render-blocking CSS:** `astro.config.mjs` sets `build: { inlineStylesheets: 'always' }` so the page CSS bundle is inlined instead of a separate blocking `<link>` request. Verify by checking a built page for zero external `.css` `<link>` tags.
 - [ ] **Target: INP ≤ 200ms.** Spot-check the contact form's submit/validation handlers and any click handlers for heavy synchronous work; flag anything that could block the main thread on interaction.
 - [ ] **Target: CLS < 0.1.** Verify every `<Image>` has explicit `width`/`height` (already checked in 5.1) and that web fonts use `font-display: swap` with a close-matching fallback stack.
 

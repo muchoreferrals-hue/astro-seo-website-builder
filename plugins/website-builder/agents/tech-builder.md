@@ -247,6 +247,8 @@ The site must pass Google's "Good" thresholds: **LCP ≤ 2.5s**, **INP ≤ 200ms
 - Preload the hero image font and the hero image itself in `BaseHead.astro`: `<link rel="preload" as="image" href={heroImageSrc} />` for the homepage, and a preload for the primary display font (`font-display: swap` in `@font-face`, or use Astro/Google Fonts' built-in preload support).
 - Never block the hero's render on client-side JS. The split-word text reveal and Ken Burns effects animate content that is already painted — they must not delay first paint.
 - Keep the critical CSS path small: Tailwind's generated CSS is fine, but don't add render-blocking third-party stylesheets in `<head>`.
+- Set `build: { inlineStylesheets: 'always' }` in `astro.config.mjs` (see Configuration Files below). For a marketing site this size, Astro's default `'auto'` threshold (4KB) still externalizes the page bundle as a render-blocking `<link>` — inlining it removes that network hop entirely from the critical path. Verify after building: `grep -o '<link[^>]*\.css[^>]*>' dist/client/index.html` should return nothing.
+- Non-hero `<Image>` instances (anything below the fold, e.g. a service-area photo) must not ship a single oversized fixed-size render. Pass `widths` (an array of breakpoints matching the layout's actual max column width, e.g. `[400, 600, 900]`) and a matching `sizes` attribute so mobile downloads a small variant instead of the same file desktop gets. PageSpeed Insights' "Improve image delivery" audit flags any image whose file dimensions exceed ~1.5x its displayed CSS size — check the rendered `<figure>`/container's max-width against the `<Image>` `width` prop before shipping.
 
 ### INP (Interaction to Next Paint)
 
@@ -394,6 +396,12 @@ export default defineConfig({
   // out with `export const prerender = false`, so it still runs on-demand.
   // This is the current replacement for the old 'hybrid' output mode.
   output: 'static',
+  // Inlines all page CSS as <style> in <head> instead of a separate render-blocking
+  // <link> — see Core Web Vitals Engineering above. Without this, Astro's default
+  // 4KB 'auto' threshold externalizes most real page bundles as a blocking request.
+  build: {
+    inlineStylesheets: 'always',
+  },
   adapter: cloudflare({
     // Leave imageService unset to use the adapter's default ('cloudflare-binding'),
     // which uses Cloudflare's auto-provisioned Images binding. Do not set a custom
@@ -547,7 +555,10 @@ const services = defineCollection({
     title: z.string(),
     slug: z.string(),
     metaTitle: z.string().max(60),
-    metaDescription: z.string().min(140).max(160),
+    // 150 is a hard ceiling, not 160 — PageSpeed/SERP snippet truncation starts
+    // before 160, and the CTA-heavy copy pattern below ("Free Quote" instead of
+    // "Get a free quote today") is how you claw back characters when trimming.
+    metaDescription: z.string().min(120).max(150),
     heroHeading: z.string(),
     heroSubheading: z.string(),
     shortDescription: z.string(),
@@ -575,7 +586,7 @@ const locations = defineCollection({
     state: z.string(),
     slug: z.string(),
     metaTitle: z.string().max(60),
-    metaDescription: z.string().min(140).max(160),
+    metaDescription: z.string().min(120).max(150),
     heroHeading: z.string(),
     intro: z.string(),
     servicesOffered: z.array(z.string()),
@@ -1155,27 +1166,29 @@ document.querySelectorAll('.form-field input, .form-field textarea, .form-field 
 
 ## public/llms.txt
 
-Create this file to describe the business for AI crawlers:
+Create this file to describe the business for AI crawlers. PageSpeed Insights' "Agentic Browsing" audit checks this file against the actual llms.txt spec (llmstxt.org): an H1, an optional blockquote summary, then H2 sections whose list items are markdown links (`[title](url): description`), not plain bullet text. **A file with no markdown links fails the audit** ("File does not appear to contain any links") even though the content itself looks fine — every list item must link to a real page on the site.
 
 ```
 # [Business Name]
 
-[Business Name] is a [industry] company based in [primary city], serving [all locations listed].
+> [One-sentence summary of what the business does and where.]
+
+[2-3 sentence description of the business.]
 
 ## Services
-[List each service with 1 sentence description]
+- [Service Name](https://YOUR_DOMAIN.com/services/service-slug): 1-sentence description.
+[Repeat for every service page]
 
 ## Service Areas
-[List all cities/locations]
+- [City, State](https://YOUR_DOMAIN.com/locations/city-slug): Primary/secondary service area.
+[Repeat for every location page]
 
-## Contact
-- Phone: [phone]
-- Email: [email]
-- Website: [url]
-
-## About
-[2-3 sentence description of the business]
+## Company
+- [About](https://YOUR_DOMAIN.com/about): Who the business is.
+- [Contact](https://YOUR_DOMAIN.com/contact): How to reach them / request a quote.
 ```
+
+Use the site's real, final slugs (check the built `dist/client/` output if unsure) — a link to a route that doesn't exist is worse than no llms.txt at all.
 
 ---
 
@@ -1203,7 +1216,23 @@ import { Image } from 'astro:assets';
 </div>
 ```
 
-For non-hero images use `loading="lazy"`.
+For non-hero images use `loading="lazy"`, and add `widths`/`sizes` so the file served actually matches the displayed size on mobile:
+
+```astro
+<Image
+  src={someImage}
+  alt="[Keyword-rich alt text]"
+  width={900}
+  height={700}
+  widths={[400, 600, 900]}
+  sizes="(min-width: 1024px) 600px, 100vw"
+  format="webp"
+  loading="lazy"
+  class="h-full w-full object-cover"
+/>
+```
+
+Set the `sizes` breakpoints to the image's *actual* max rendered width in its container (check the grid/flex column it sits in), not the source file's intrinsic width — otherwise PageSpeed's "Improve image delivery" audit will flag it for shipping a desktop-sized file to mobile.
 
 ---
 
@@ -1233,3 +1262,6 @@ After generating all files, run a self-check:
 10. Is the GrainOverlay included in BaseLayout?
 11. Does the header have the scroll progress bar and glass-morphism transition?
 12. Do all section H2s have the scroll-triggered word reveal animation class?
+13. Does `dist/client/index.html` have zero external `.css` `<link>` tags (CSS inlined per `build.inlineStylesheets: 'always'`)?
+14. Do all non-hero `<Image>` instances have `widths`/`sizes` matching their real rendered container width?
+15. Does `public/llms.txt` contain actual markdown links (`[text](url)`) to every real page, not plain bullet text?
