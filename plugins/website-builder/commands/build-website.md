@@ -12,6 +12,17 @@ Work through the following steps in order. Do NOT skip steps.
 
 ---
 
+## Deployment Policy (applies to this build and all future changes)
+
+Every site built with this skill is deployed via **Cloudflare's Git integration** (Workers Builds / Pages, connected to the site's GitHub repo), never via a direct `npx wrangler deploy` from a local machine.
+
+- All code changes — during this build and in every future session working on this site — go: edit → commit → `git push` to GitHub. Cloudflare watches the connected repo and automatically pulls and builds on every push to the production branch (typically `main`).
+- Never run `npx wrangler deploy` (or `wrangler pages deploy`) directly as the way to ship a change. That bypasses git entirely, so GitHub silently falls behind what's actually live — the whole point of this policy is that GitHub is always the source of truth for what's deployed.
+- Set this up once during STEP 9 handoff (Cloudflare Dashboard → Workers & Pages → Create → Connect to Git). After that, "deploy" always means "push to GitHub" — say so explicitly in the handoff report and in the generated CLAUDE.md (STEP 3) so this rule persists for any future Claude session working on the codebase.
+- The only Cloudflare-side commands that remain fine to run directly are ones that aren't a code deploy: `npx wrangler secret put <NAME>` (secrets), `npx wrangler types` (type generation), and read-only commands like `wrangler deployments list`.
+
+---
+
 ## STEP 0: Niche & Market Validation
 
 Before the onboarding questionnaire, validate that the niche and target city (or cities) are actually worth building for.
@@ -183,6 +194,9 @@ See the niche-scout report from STEP 0 for the market validation this site was b
 
 ## Analytics
 [IF GTM Container ID was provided in Q10: "Google Tag Manager (`[GTM-XXXXXXX]`) is installed site-wide in `src/layouts/BaseLayout.astro` — script in `<head>`, noscript right after `<body>`. The contact form (`ContactForm.astro`) pushes a `contact_form_submit` event to `dataLayer` on successful submission, for GTM to catch as a lead-conversion trigger." ELSE: "No GTM container was provided at build time. See the handoff report's Analytics Setup checklist for how to add it — ask Claude to wire it into `BaseLayout.astro` once you have a Container ID."]
+
+## Deployment
+This site deploys via **Cloudflare's Git integration**, connected to this repo's GitHub remote. "Deploying" a change always means: commit it, then `git push` to `main` — Cloudflare automatically pulls and builds from GitHub on every push. **Never run `npx wrangler deploy` (or `wrangler pages deploy`) to ship code changes** — that bypasses GitHub and leaves it out of sync with what's actually live. `npx wrangler secret put <NAME>` (for secrets) and other non-deploy `wrangler` commands are still fine to run directly.
 ```
 
 If more than one city was targeted, either generate one CLAUDE.md per site (if each city gets its own project) or list all workspaces/findings if this is a single multi-location site — match whatever structure Andy chose in STEP 1 Q3.
@@ -404,8 +418,8 @@ Everything so far is local only — nothing has been pushed to GitHub or deploye
 
 1. When you're happy with it, commit it: `git add -A && git commit -m "Initial site build"`.
 2. Push to GitHub: create a repo (via `gh repo create` or on github.com), then `git remote add origin <repo-url>` and `git push -u origin main`.
-3. Deploy: `npx wrangler deploy`
-4. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file)
+3. Connect Cloudflare to that GitHub repo: Cloudflare Dashboard → Workers & Pages → Create → **Connect to Git** → select the repo → set build command `npm run build`, and let it detect the Astro/`@astrojs/cloudflare` output. This is a one-time setup. From here on, **every deploy is just a `git push` to `main`** — Cloudflare automatically pulls and builds. Do not run `npx wrangler deploy` to ship code changes; see the Deployment Policy at the top of this command and the `## Deployment` section this build wrote into the site's `CLAUDE.md`.
+4. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file). This is a secret binding, not a code deploy, so it's fine to run directly and doesn't conflict with the Git-integration workflow above.
 5. Point your domain in Cloudflare Dashboard
 
 ### Analytics Setup (Manual — Google Dashboards)
