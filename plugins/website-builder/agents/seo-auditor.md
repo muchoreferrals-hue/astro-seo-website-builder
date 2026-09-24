@@ -29,6 +29,7 @@ You will be given the full list of generated project files. Read every relevant 
 ### 1.1 Core Config
 - [ ] `astro.config.mjs` has `site` URL set to a non-localhost, non-placeholder value (or note it as a placeholder for user to update)
 - [ ] `astro.config.mjs` has `output: 'static'`
+- [ ] `astro.config.mjs` has `trailingSlash: 'always'` — Cloudflare serves directory URLs and redirects the slashless form, so anything that emits a URL has to match or it points at a redirect
 - [ ] `astro.config.mjs` has `build: { inlineStylesheets: 'always' }` (avoids a render-blocking CSS request — see 5.4)
 - [ ] `astro.config.mjs` includes sitemap integration
 - [ ] `astro.config.mjs` includes Cloudflare adapter
@@ -44,6 +45,7 @@ You will be given the full list of generated project files. Read every relevant 
 - [ ] `BaseHead.astro` includes `<link rel="canonical" href={canonical} />`
 - [ ] Every page passes a `canonical` prop to `BaseHead`
 - [ ] Canonical URLs use the `siteConfig.url` base (no hardcoded domains)
+- [ ] **HARD FAIL:** Canonical, sitemap entries, internal links, and BreadcrumbList schema URLs all carry the trailing slash. A canonical pointing at a redirect is an indexing problem, not a cosmetic one. Spot-check a built page in `dist/client/` against the generated sitemap.
 
 ### 1.4 ViewTransitions
 - [ ] `ViewTransitions` is imported from `astro:transitions` in `BaseLayout.astro`
@@ -62,7 +64,7 @@ You will be given the full list of generated project files. Read every relevant 
 - [ ] `public/llms.txt` exists with an H1 and H2 sections
 - [ ] **HARD FAIL:** Every list item under each H2 is a markdown link (`[title](url): description`), not plain bullet text — PageSpeed's Agentic Browsing audit fails the file entirely ("File does not appear to contain any links") if it finds zero links, even if the content itself reads fine.
 - [ ] Every link target is a real, live route on the built site (check `dist/client/` if unsure) — services, locations, about, contact at minimum.
-- [ ] Link URLs match the site's canonical trailing-slash form (if `trailingSlash: 'always'`, every link needs its slash — otherwise the file is a list of redirects)
+- [ ] Every link URL carries its trailing slash, matching `trailingSlash: 'always'` — otherwise the file is a list of redirects
 - [ ] Has an `## Agent Tools Available` section naming the registered WebMCP tools, and a `## Contact` section with the real phone, email, and hours from `site-config.ts`
 - [ ] No placeholder text anywhere — real business name in the H1, real services, real contact details
 
@@ -72,7 +74,7 @@ You will be given the full list of generated project files. Read every relevant 
 - [ ] Registers `search_site` (with `annotations: { readOnlyHint: true }`) and one conversion tool named for the business's real primary action
 - [ ] **HARD FAIL:** The conversion tool is implemented for real against `/api/contact` — a stub, a TODO, or a tool that only returns the phone number fails
 - [ ] `src/pages/api/search.json.ts` exists with `export const prerender = false`, returns `{ results: [{ title, url, excerpt }] }`, and indexes every collection plus the standalone pages
-- [ ] Search excerpts have Markdown stripped (no `**bold**` reaching an agent) and URLs match the canonical trailing-slash form
+- [ ] Search excerpts have Markdown stripped (no `**bold**` reaching an agent) and every result URL carries its trailing slash
 - [ ] `ContactForm.astro` carries `toolname` + `tooldescription` on the `<form>`, and **every** input/select/textarea has a `name`, a `toolparamdescription`, and a real `<label>` — including the honeypot
 - [ ] **HARD FAIL:** No hidden decoy search form and no link to a `/search` page that does not exist
 - [ ] `public/_headers` sets `Permissions-Policy: tools=(self)` for `/*`
@@ -224,7 +226,7 @@ Where possible, run or reference a Lighthouse pass and report the actual measure
 - [ ] Basic email format validation present
 - [ ] Uses Brevo for email sending (plain `fetch` to `https://api.brevo.com/v3/smtp/email`, no SDK)
 - [ ] Email recipient is populated from `siteConfig` (not hardcoded placeholder)
-- [ ] The form's `fetch` target matches the canonical URL form — if `trailingSlash: 'always'`, it posts to `/api/contact/`, since the slashless URL 308-redirects and costs a round trip on the main conversion path
+- [ ] The form's `fetch` target is `/api/contact/` **with the trailing slash** — the slashless URL 308-redirects and costs a round trip on the main conversion path
 
 ---
 

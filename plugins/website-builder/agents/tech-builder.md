@@ -399,6 +399,13 @@ export default defineConfig({
   // out with `export const prerender = false`, so it still runs on-demand.
   // This is the current replacement for the old 'hybrid' output mode.
   output: 'static',
+  // Cloudflare Workers Static Assets serves pages at directory URLs
+  // (/about/index.html) and redirects the slashless form to them, so the
+  // slash form is the real address. Astro has to agree, or every canonical,
+  // sitemap entry, internal link, and breadcrumb URL points at a redirect.
+  // Google has no ranking preference between the two forms — consistency
+  // across all of them is the whole game, and the host picks the form.
+  trailingSlash: 'always',
   // Inlines all page CSS as <style> in <head> instead of a separate render-blocking
   // <link> — see Core Web Vitals Engineering above. Without this, Astro's default
   // 4KB 'auto' threshold externalizes most real page bundles as a blocking request.
@@ -806,7 +813,7 @@ Renders 2-3 absolutely positioned divs, each 400-600px, with `radial-gradient` f
 - Submit button: primary button style with loading spinner while pending
 - On success: shows inline confirmation with the animated checkmark (no page reload)
 - On error: shows error message with retry option
-- POSTs to `/api/contact` (use `/api/contact/` **if and only if** `trailingSlash: 'always'` is set in astro.config.mjs — otherwise the slashless URL 308-redirects and every submission pays an extra round trip on the main conversion path)
+- POSTs to `/api/contact/` **with the trailing slash** — `trailingSlash: 'always'` applies to extensionless API routes too, so the slashless URL 308-redirects and every submission pays an extra round trip on the main conversion path
 - If a GTM Container ID was provided, pushes the `contact_form_submit` dataLayer event on success — see Analytics & Conversion Tracking above
 
 ### Breadcrumb.astro
@@ -1253,7 +1260,7 @@ On-demand route (`export const prerender = false`, same as contact.ts) because i
 - Score title hits above excerpt hits above body hits, and an exact phrase match in the title above any accumulation of loose term hits.
 - Match against extra text you never return (FAQ answers, benefits, process steps, neighbourhood names) so long-tail questions land on the right page.
 - **Strip Markdown from excerpts.** Collection copy is Markdown, and an agent should not receive `**bold**` syntax in a description.
-- **Emit URLs in the site's canonical form.** If `trailingSlash: 'always'` is set, every URL in the index needs its trailing slash, or you hand agents a list of redirects.
+- **Emit every URL with its trailing slash**, matching `trailingSlash: 'always'`. Without it you hand agents a list of redirects. Routes with a file extension (`/api/search.json`) are exempt from the rule and need no slash.
 - Missing `q` returns 400 with an empty `results` array, never a 500.
 - Send `cache-control: public, max-age=300` — the corpus only changes on redeploy.
 
@@ -1317,16 +1324,16 @@ Create this file to describe the business for AI crawlers. PageSpeed Insights' "
 [2-3 sentence description of the business.]
 
 ## Services
-- [Service Name](https://YOUR_DOMAIN.com/services/service-slug): 1-sentence description.
+- [Service Name](https://YOUR_DOMAIN.com/services/service-slug/): 1-sentence description.
 [Repeat for every service page]
 
 ## Service Areas
-- [City, State](https://YOUR_DOMAIN.com/locations/city-slug): Primary/secondary service area.
+- [City, State](https://YOUR_DOMAIN.com/locations/city-slug/): Primary/secondary service area.
 [Repeat for every location page]
 
 ## Company
-- [About](https://YOUR_DOMAIN.com/about): Who the business is.
-- [Contact](https://YOUR_DOMAIN.com/contact): How to reach them / request a quote.
+- [About](https://YOUR_DOMAIN.com/about/): Who the business is.
+- [Contact](https://YOUR_DOMAIN.com/contact/): How to reach them / request a quote.
 
 ## Agent Tools Available
 This site registers WebMCP tools (https://developer.chrome.com/docs/ai/webmcp) for agentic browsers.
@@ -1345,7 +1352,7 @@ A machine-readable index is served at https://YOUR_DOMAIN.com/api/search.json?q=
 
 Also state plainly where a page does **not** exist — e.g. "There is no separate pricing page; pricing is quoted per job." An agent that assumes `/pricing` exists will send visitors to a 404.
 
-Use the site's real, final slugs (check the built `dist/client/` output if unsure) — a link to a route that doesn't exist is worse than no llms.txt at all.
+Use the site's real, final slugs (check the built `dist/client/` output if unsure) — a link to a route that doesn't exist is worse than no llms.txt at all. Every URL carries its trailing slash, matching `trailingSlash: 'always'`; without it the whole file is a list of redirects.
 
 ---
 

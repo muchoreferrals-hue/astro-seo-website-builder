@@ -173,6 +173,9 @@ Nothing else in this build process generates a `CLAUDE.md` for the new site, so 
 - WebMCP tools registered site-wide via `src/components/WebMCPTools.astro`, backed by `src/pages/api/search.json.ts`
 - Images generated via the `nano-banana-pro` skill, converted PNG→WebP with `sharp`/`sharp-cli`
 
+## URL Convention
+`astro.config.mjs` sets `trailingSlash: 'always'`. Cloudflare serves pages at directory URLs and redirects the slashless form, so the slash form is the real address. Anything that emits a URL — canonical, sitemap, internal links, breadcrumb schema, `llms.txt`, the WebMCP search index — has to carry the slash, or it points at a redirect and Google sees a canonical it has to follow. Extensionless API routes are covered by the rule too (`fetch('/api/contact/')`); routes with a file extension (`/api/search.json`) are exempt. Do not change this convention after launch — switching it on an indexed site forces a re-crawl.
+
 ## Image Rule
 Every image in this site must be `.webp`. `nano-banana-pro` outputs PNG by default — always convert before referencing an image anywhere in the codebase. Never commit or reference a `.png` in `src/` or `public/images/`.
 
