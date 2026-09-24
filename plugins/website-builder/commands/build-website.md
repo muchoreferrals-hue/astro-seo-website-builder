@@ -62,6 +62,63 @@ Before the onboarding questionnaire, find out whether this build has a client-ap
 
 ---
 
+## STEP 0.6: Competitive Service & Language Mining
+
+Runs after STEP 0 (it consumes niche-scout's competitor list) and before STEP 1 (its output feeds Q2). Do not skip it and do not reorder it.
+
+**Why this step exists.** Without it, Q2 asks the client to name their own services, and a client names them the way the trade names them. That is how a site gets built on "pet waste removal" when the searches are for "pooper scooper service" and "dog poop pickup" — terms carrying 2-3x the volume at lower competition, discovered only after launch and retrofitted into copy. Industry vocabulary and customer vocabulary are different languages, and only one of them gets typed into Google.
+
+### 1. Harvest the competitor service sets
+
+From niche-scout's organic competitor domains (top 5-10):
+
+- Fetch each competitor's services index and service pages. Record the **service names, slugs, and how they group and nest**. You are after both the vocabulary and the structure.
+- Build a frequency table: which services appear across most competitors (table stakes), which appear on only one or two (differentiators or dead weight).
+- Note any service the client has not mentioned. A service five competitors offer and the client does not is worth raising at Q2 — either it is a real gap in their offering or a real gap in what they told you.
+
+### 2. Translate trade terms into customer terms
+
+For every harvested service name, gather how real people phrase it:
+
+- **`fetch_autocomplete_keywords`** — Google Autocomplete is unfiltered user phrasing and the single highest-signal source here. Seed it with the service name, with common prefixes ("who does", "cost of", "cheap", "best"), and with the bare problem ("dog poop in yard").
+- **`get_keyword_suggestions`** — related terms. Pass `source` explicitly (see below).
+- **`get_bing_related_keywords`** — catches phrasings Google's own suggestion set misses.
+- **`fetch_serp_data`** — pull **People Also Ask** for each seed. PAA is customer language in question form and seeds the FAQ sections directly.
+
+### 3. Classify intent before spending a credit
+
+Run the whole harvested set through **Search Intent Bulk Check** (v2.5.0) *first*. It labels intent with **zero DataForSEO credit consumption**, so it costs nothing to run wide.
+
+Use the labels to triage before paying for volume:
+- **Transactional / commercial** → candidate for its own page
+- **Informational** → candidate for an FAQ entry or a section within a page, not a page of its own
+- Anything clearly off-topic → drop before it reaches a paid check
+
+*Prerequisite:* Search Intent Bulk Check needs a TypeSafe API key in SEO Utils Settings. If it is not configured, say so and fall back to classifying intent by inspection — do not silently skip the triage and send the whole set to a paid check.
+
+### 4. Score, with the source recorded
+
+**`check_keyword_metrics`** on the surviving terms, industry phrasing and customer phrasing alike, so the comparison is like for like.
+
+- Check `keyword_metrics` via **`query_database`** first. Content Gap auto-saves there since v2.4.0, so part of this may already be paid for from STEP 0.
+- Pass `source` explicitly. Start on `labs`, and **re-check anything that returns null, empty, or zero** with `source: 'google_ads'` or `dfs_search_volume` before recording it as low demand. This matters most in exactly the markets these sites are built for: `labs` rejects Canadian province-level locations outright.
+- Record the source alongside every number.
+
+### 5. Reconcile, and hand it to Q2
+
+Produce a table:
+
+| Industry term | Customer term(s) | Volume ratio | Intent | Recommended public name | Secondary terms |
+|---|---|---|---|---|---|
+
+The recommendation rule: **the customer term leads in copy, the industry term is retained as a secondary.** "Weekly Yard Scooping" can stay the formal service label while H1s, FAQs and body copy speak in the phrasing people search. Never drop the industry term entirely — it carries relevance and some customers do use it.
+
+Show this table to the user, then run STEP 1. **Q2 changes shape because of it:** instead of "list every service you offer," present the harvested list and ask the client to confirm, cut, or add, with the customer-language recommendation already attached to each row.
+
+Carry the full keyword set, the intent labels, and the cluster IDs forward. STEP 3.5 builds the site architecture from them.
+
+---
+
 ## STEP 1: Onboarding Questionnaire
 
 Ask the following questions using `AskUserQuestion`. Ask them one at a time and wait for each answer before continuing.
@@ -69,8 +126,14 @@ Ask the following questions using `AskUserQuestion`. Ask them one at a time and 
 **Q1 -- Business basics:**
 "What is your business name, tagline, phone number, email address, and physical address (or service area if you don't have a storefront)?"
 
-**Q2 -- Services:**
-"List every service you offer. For each one, give me: the service name, a 1-2 sentence description, and what makes you better at it than competitors (differentiator)."
+**Q2 -- Services:** (driven by STEP 0.6 — do not ask this cold)
+Present the reconciled service table from STEP 0.6 and ask the client to confirm, cut, or add:
+
+"Here's what the top competitors in your market offer, and how customers actually search for each one. Confirm which of these you do, cut any you don't, and add anything missing. For each one you keep, give me a 1-2 sentence description and what makes you better at it than competitors.
+
+Note the 'customers search for' column — where it differs from the industry term, the site will lead with the customer phrasing in headings and copy while keeping your formal service name as the label. That's deliberate: it's the phrasing that gets typed into Google."
+
+If STEP 0.6 could not run (no competitors found, or tooling unavailable), fall back to asking cold — "List every service you offer..." — and say plainly in the summary that services were not validated against search demand.
 
 **Q3 -- Locations:**
 "What is your primary city/location? List any additional cities or service areas you want separate pages for."
@@ -175,6 +238,11 @@ Nothing else in this build process generates a `CLAUDE.md` for the new site, so 
 - WebMCP tools registered site-wide via `src/components/WebMCPTools.astro`, backed by `src/pages/api/search.json.ts`
 - Images generated via the `nano-banana-pro` skill, converted PNG→WebP with `sharp`/`sharp-cli`
 
+## Site Architecture
+The site's page structure, keyword targeting and internal linking plan live in `docs/site-architecture.csv`, with a rendered hierarchy in `docs/site-architecture.mmd` (and `docs/site-architecture.svg` if one was exported). Every page on this site is a row in that CSV: slug, primary keyword (unique per page), intent, SERP cluster, schema types, and the pages it must link to and from.
+
+**Change the map before you change the site.** Adding a page, retargeting a keyword, or restructuring nesting means updating the CSV first, so the cannibalization guard (one primary keyword per page, enforced unique) and the internal linking plan stay intact. A page that exists but is not in the CSV is a bug.
+
 ## URL Convention
 `astro.config.mjs` sets `trailingSlash: 'always'`. Cloudflare serves pages at directory URLs and redirects the slashless form, so the slash form is the real address. Anything that emits a URL — canonical, sitemap, internal links, breadcrumb schema, `llms.txt`, the WebMCP search index — has to carry the slash, or it points at a redirect and Google sees a canonical it has to follow. Extensionless API routes are covered by the rule too (`fetch('/api/contact/')`); routes with a file extension (`/api/search.json`) are exempt. Do not change this convention after launch — switching it on an indexed site forces a re-crawl.
 
@@ -217,6 +285,92 @@ If more than one city was targeted, either generate one CLAUDE.md per site (if e
 
 ---
 
+## STEP 3.5: Information Architecture & Keyword Map
+
+Runs after the scaffold exists (so the artifacts have somewhere to live) and **immediately before STEP 4**. This is a **hard gate**: Andy approves the architecture before a single page gets built.
+
+**Why here.** STEP 4 spawns tech-builder and seo-writer in parallel off the same business data, and each infers structure independently — routes and nesting on one side, target keywords and headings on the other. Nothing reconciles them. This step makes the architecture a **contract both agents build against** instead of something each invents. It is also the last moment changing the sitemap is free: afterwards it means rebuilt pages, rewritten copy, and redirects.
+
+### 1. Decide the page set
+
+Work from STEP 0.6's keyword set, intent labels, and STEP 0's SERP cluster IDs.
+
+**Cluster before counting pages.** Two keywords in the same SERP cluster are **one page**, not two. If "dog poop removal keswick" and "pooper scooper keswick" return substantially the same SERP, building both is building two pages that compete with each other. Re-run **`run_serp_clustering`** with `reuse_word_order_twins: true` if the STEP 0 set did not cover everything harvested in STEP 0.6.
+
+**Then apply intent.** Transactional and commercial clusters earn a page. Informational clusters become an FAQ entry or a section on an existing page. Record the decision either way — an informational keyword with no home is a keyword you will rediscover in GSC in six months.
+
+**Decide the service × location matrix explicitly.** Given services S and locations L, you can build `/services/{s}/` and `/locations/{l}/`, or also `/services/{s}-{l}/` for every combination. For a 3-town local site the answer is almost always **no** — the combination pages cannibalize both parents and dilute thin content across too many URLs. But it must be a **recorded decision with a reason**, not an omission. If the cluster data shows a genuinely distinct SERP for a service+city combination, that is the evidence that justifies the page.
+
+**Constraints to hold:**
+- Click depth ≤ 3 from the homepage for every page
+- Exactly one primary keyword per page, unique across the whole site
+- Location pages carry the unique-content target from the site's `CLAUDE.md` (45% by default)
+
+### 2. Write `docs/site-architecture.csv`
+
+The master sheet, and the thing both STEP 4 agents build from. One row per page:
+
+| Column | Contents |
+|---|---|
+| `page_id` | Stable short id, e.g. `svc-weekly-scooping` |
+| `parent_id` | The `page_id` this nests under; blank for the homepage |
+| `depth` | Click depth from home. Nothing above 3. |
+| `url_slug` | Full path **with trailing slash**, matching `trailingSlash: 'always'` |
+| `page_type` | home / service / location / hub / about / contact / legal |
+| `title_tag` | 50-60 chars |
+| `meta_description` | 140-160 chars |
+| `h1` | The on-page H1, which is not the title tag |
+| `primary_keyword` | **Unique across every row.** This is the cannibalization guard. |
+| `primary_kw_volume` | Monthly volume |
+| `primary_kw_difficulty` | KD |
+| `metrics_source` | `labs` / `google_ads` / `dfs_search_volume` — which source that number came from |
+| `secondary_keywords` | Pipe-delimited |
+| `search_intent` | From the Search Intent Bulk Check |
+| `serp_cluster_id` | The evidence for every split-or-merge decision |
+| `target_location` | Which town this page owns, or blank |
+| `internal_links_out` | `page_id`s this page must link to |
+| `internal_links_in` | `page_id`s that must link here |
+| `schema_types` | LocalBusiness / Service / FAQPage / BreadcrumbList |
+| `unique_content_target` | % unique content required, for location pages |
+| `word_count_target` | Rough target, from what the SERP competitors actually run |
+| `cta_primary` | The conversion action this page drives |
+| `unique_angle` | What this page says that no other page on the site says |
+| `status` | `planned` at this stage |
+
+**Internal linking is designed here, not left to emerge.** On a small local site internal linking is the one authority lever fully under our control — no outreach, no link building, just structure. Filling `internal_links_in` and `internal_links_out` deliberately now is worth more than discovering the gaps through GSC's Internal Links report a year later. Every page needs at least one inbound link from a page at lower depth, and orphan pages are a build error.
+
+### 3. Write `docs/site-architecture.mmd`
+
+A mermaid `flowchart TD` of the hierarchy, renderable in GitHub and embeddable in the site's `CLAUDE.md`. Node labels carry the page name and its primary keyword, so the diagram is readable as a keyword map and not just a sitemap:
+
+```
+flowchart TD
+  home["/ — {primary kw}"] --> services["/services/ — {primary kw}"]
+  home --> locations["/locations/ — {primary kw}"]
+  services --> svc1["/services/{slug}/ — {primary kw}"]
+  locations --> loc1["/locations/{slug}/ — {primary kw}"]
+```
+
+### 4. Export a visual (Figma, optional)
+
+If the Figma MCP is connected, use **`generate_diagram`** to produce a FigJam site map from the same hierarchy, then export it to `docs/site-architecture.svg`.
+
+**This is optional with graceful fallback.** If the Figma MCP is not available, render the mermaid file to `docs/site-architecture.svg` locally and carry on. Do not block the build on Figma and do not prompt to install it.
+
+Note: the WebP-only rule applies to site images under `src/` and `public/images/`. These are documentation assets under `docs/` and stay SVG or PNG.
+
+### 5. Gate
+
+Show Andy the mermaid diagram, the page count, and the CSV summary (slug, primary keyword, volume, intent per row). Ask:
+
+> "This is the site architecture — [N] pages, [N] services, [N] locations. Changing it after the build means rebuilt pages, rewritten copy and redirects. Approve to continue, or tell me what to change."
+
+**Wait for explicit approval before STEP 4.** Then set the architecture files as required reading for both agents: tech-builder builds exactly these routes with exactly this nesting, seo-writer writes to exactly these keywords, titles and H1s. Neither invents a page that is not in the CSV.
+
+Add a `## Site Architecture` section to the site's `CLAUDE.md` pointing at both files, so future sessions change the map before they change the site.
+
+---
+
 ## STEP 4: Spawn Specialist Agents in Parallel
 
 In a single message, spawn both agents simultaneously using the Task tool.
@@ -228,6 +382,7 @@ In a single message, spawn both agents simultaneously using the Task tool.
 Provide the full business data collected in Step 1, the color palette from Step 2, and the list of all services and locations. Instruct it to build the entire Astro project file structure as defined in the tech-builder agent specification.
 
 Pass this context:
+- **`docs/site-architecture.csv` and `docs/site-architecture.mmd` from STEP 3.5 — required reading for both agents, and the contract they build against.** tech-builder builds exactly the routes and nesting in the CSV. seo-writer writes to exactly the `primary_keyword`, `title_tag` and `h1` in each row, and to the customer phrasing from STEP 0.6 rather than trade vocabulary. **Neither agent invents a page that is not a row in the CSV, and neither silently retargets a page's primary keyword.** If either believes the architecture is wrong, it says so and stops rather than diverging from it.
 - Business name, tagline, contact info, address/service area
 - All services (names, descriptions, differentiators, slugs)
 - All locations (names, slugs, whether primary or secondary)
@@ -497,6 +652,13 @@ Present a clean summary to the user:
 - Sitemap: /sitemap-index.xml
 - Robots.txt: /robots.txt
 
+### Site Architecture
+- `docs/site-architecture.csv` — [N] pages, one primary keyword each, with intent, SERP cluster, and the internal linking plan
+- `docs/site-architecture.mmd` — hierarchy diagram (renders in GitHub)
+- `docs/site-architecture.svg` — [exported from Figma / rendered from mermaid / not generated]
+- Service × location matrix decision: [combination pages built / not built, and why]
+- Customer-language substitutions made: [industry term → customer term, with the volume ratio that justified it]
+
 ### Agentic Browsing (WebMCP)
 - WebMCP tools registered: `search_site`, `[conversion tool]`, `[conversion]_form` (declarative, on the contact form)
 - Search endpoint: `/api/search.json?q=` — indexes every service, location, and standalone page
@@ -545,9 +707,22 @@ Claude cannot log into Google's dashboards directly, so these are done by you, w
 
 **Google Business Profile:** add/confirm your listing with NAP (name/address/phone) matching the site footer exactly.
 
+### Ongoing SEO Utils Work (once the site has data)
+
+These are not build steps. They need live data, so they start weeks after launch. Reuse the existing SEO Utils workspace from STEP 0 — do not create a new one.
+
+**GSC Internal Links** (v2.5.0) — once Search Console has a few weeks of data, run Internal Links. It finds pages that need more inbound links and **suggests the exact sentence and anchor text** for each one. On a small local site this is the highest-leverage authority lever available: no outreach, no link building, just structure. The STEP 3.5 architecture already planned the linking, so treat this as the feedback loop that shows where the plan and reality diverged.
+
+**GMB Rank Tracker — Progress view** (v2.3.0) — compares grid rankings across date ranges, so you see whether map-pack coverage is actually *expanding*, not just today's snapshot. Local service businesses live or die in the map pack.
+
+Set the **baseline grid scan now**, at launch, even before the client's own Google Business Profile is established. The tracker reads the public map pack, so it works pointed at competitors, and without a run from launch day the Progress view has nothing to compare against later. If STEP 0's map pack fallback already ran a grid scan, that scan is the baseline.
+
+**Keyword metrics source** — when re-checking volumes later, pass `source` explicitly and re-check anything returning null on `labs` against `google_ads` or `dfs_search_volume`. `labs` rejects Canadian province-level locations outright, and a null there is a source limitation, not a finding.
+
 ### Verify Your Site
 - Lighthouse: target Performance >90, SEO 100, Accessibility >90 — check LCP ≤2.5s, INP ≤200ms, CLS <0.1 specifically
 - Schema: Google Rich Results Test
+- **Architecture drift:** every built route appears in `docs/site-architecture.csv` and vice versa. A page that exists but is not in the CSV, or a CSV row with no page, means the map and the site have diverged.
 - **Agentic Browsing:** run Lighthouse > Agentic Browsing on the live domain and confirm `webmcp-schema-validity` and `llms-txt-presence` pass. To see the tools directly, open the contact page in Chrome Canary with `chrome://flags/#enable-webmcp-testing` enabled, then run `await navigator.modelContext.getTools()` in the DevTools console — expect all three tools there, two on pages without the contact form.
 - Contact form: test end-to-end submission, then confirm in GTM Preview mode and GA4 Realtime that `contact_form_submit` / `generate_lead` actually fire
 ```

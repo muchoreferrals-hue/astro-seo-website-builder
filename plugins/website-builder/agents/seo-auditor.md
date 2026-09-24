@@ -38,6 +38,19 @@ You will also be told which **design mode** the build is in: default, or client-
 - [ ] `wrangler.jsonc` exists with `main`, `compatibility_flags`, and `assets` binding
 - [ ] `tailwind.config.mjs` has custom color palette (not default Tailwind colors only)
 
+### 1.1b Architecture Conformance
+The build has a `docs/site-architecture.csv` from STEP 3.5. It is the contract the site was built against — audit against it, not against your own idea of what pages should exist.
+- [ ] **HARD FAIL:** Every built route appears as a row in `docs/site-architecture.csv`, and every CSV row has a corresponding built page. A page nobody planned and a planned page nobody built are both defects.
+- [ ] **HARD FAIL:** `primary_keyword` is unique across every row — two pages sharing a primary keyword is keyword cannibalization baked into the architecture
+- [ ] Each page's `<title>` and H1 match the `title_tag` and `h1` planned for its row (minor copy refinement is fine; a different keyword target is not)
+- [ ] No page exceeds `depth` 3 from the homepage
+- [ ] Every page has at least one inbound internal link from a page at lower depth — no orphans
+- [ ] Internal links actually present on each page match that row's `internal_links_out`
+- [ ] Location pages meet their `unique_content_target` (45% by default)
+- [ ] Every `url_slug` in the CSV carries its trailing slash and matches the built route exactly
+
+If `docs/site-architecture.csv` is missing, record this whole subsection as N/A and note in the report that the build skipped STEP 3.5.
+
 ### 1.2 Sitemap and Robots
 - [ ] `@astrojs/sitemap` is integrated; sitemap will be generated at `/sitemap-index.xml`
 - [ ] `astro-robots-txt` is integrated; `robots.txt` will be generated
