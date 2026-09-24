@@ -56,6 +56,8 @@ Before the onboarding questionnaire, find out whether this build has a client-ap
 4. It also supersedes tech-builder's own default "Design Philosophy" system (GSAP animation, glass-morphism, gradient mesh, bento grids, etc. — see tech-builder.md). Tell tech-builder explicitly in STEP 4 that this build is in **client-supplied-design mode**: implement the decoded export faithfully as real Astro components, not the default system.
 5. Note this permanently in the generated CLAUDE.md (STEP 3): mark the design section `**Client-supplied design (permanent).**` and describe the aesthetic actually delivered, so future work on this codebase treats the plainer/different look as the intended, final direction rather than a placeholder to be "improved" back toward the default maximalist style.
 
+6. Carry the mode forward. **STEP 5.5 (Part B vs Part C) and the auditor's Section 8 (8.2-8.7 vs 8.8) both branch on it**, and the auditor needs the decoded spec itself to check fidelity. Tell it the mode explicitly in STEP 7 — an auditor that assumes default mode will fail a client-approved design on every check.
+
 **If no design export is supplied:** proceed normally — Q6/Q6b in STEP 1 drive the design, and tech-builder's default Design Philosophy system applies in full.
 
 ---
@@ -269,23 +271,63 @@ After both agents return their outputs, use the tech-builder agent again (or dir
 
 ## STEP 5.5: Design Quality Review
 
-Before handing off to the SEO auditor, run a design quality check against the generated code. Go through each category below and verify the implementation directly by reading the relevant files.
+Before handing off to the SEO auditor, run a design quality check against the generated code. Verify each item by reading the relevant files directly.
 
-### Layout checks
+**This step is mode-aware.** Part A runs on every build. Then run **either** Part B **or** Part C, never both:
+
+- **Default design mode** (no design export supplied in STEP 0.5) → Part A + Part B
+- **Client-supplied-design mode** (a design export was decoded in STEP 0.5) → Part A + Part C
+
+Running Part B against a client-supplied build is a mistake: the client's approved design deliberately omits most of the default system, so the checklist reports a wall of failures on a site that is exactly what was signed off, and the instruction to "fix it" would undo STEP 0.5. tech-builder already branches this way (see its Client-Supplied Design Override section); this step has to match.
+
+### Part A: Universal checks (run on every build)
+
+These hold regardless of aesthetic. A flat, restrained design passes all of them.
+
+**Structure and rhythm**
+- [ ] Section padding is generous and internally consistent (never below `py-16`; sibling sections use the same scale)
+- [ ] Long-form text blocks are width-constrained (`max-w-prose` or equivalent), not full-bleed
+- [ ] Adjacent sections are visually distinguishable from one another (background, border, or spacing shift — the mechanism is the design's choice)
+- [ ] Footer is complete: navigation, contact details, social links where provided, and a copyright line. No stub or placeholder footer.
+- [ ] A real typographic hierarchy exists: a clear size step between hero, section headings, and body
+
+**Interaction and state**
+- [ ] Every interactive element has a visible hover state **and** a `focus-visible` state (keyboard users are not an afterthought)
+- [ ] Buttons have a disabled state that reads as disabled
+- [ ] FAQ accordion is keyboard-operable and its open/closed indicator actually changes between states
+- [ ] Contact form: every input has an associated `<label>`, a visible loading state on submit, and inline success and error states (no full page reload)
+- [ ] Form inputs have a branded focus style, not the browser default outline alone
+- [ ] Any animation present respects `prefers-reduced-motion`
+
+**Responsive and accessibility**
+- [ ] Layout works at 360px wide with no horizontal scroll
+- [ ] Touch targets are at least 44px on mobile
+- [ ] Body text and button text meet WCAG AA contrast against their backgrounds
+- [ ] Nothing depends on hover alone to be usable or discoverable
+
+**Hygiene**
+- [ ] No unused or orphaned components left in `src/components/`
+- [ ] No placeholder copy, lorem ipsum, or `TODO` left in any rendered file
+
+### Part B: Default design system checks (default design mode only)
+
+Skip this entire part in client-supplied-design mode.
+
+**Layout**
 - [ ] Homepage hero uses asymmetric split layout (NOT centered text over image)
 - [ ] Service/location cards use bento grid layout with a featured first card
 - [ ] Section transitions exist between differently-backgrounded sections (SectionDivider, clip-path, or gradient fade)
 - [ ] Sections alternate between at least 2 background colors for visual rhythm
 - [ ] Footer has 4-column layout with social icons, brand decoration, and back-to-top button
 
-### Visual depth checks
+**Visual depth**
 - [ ] All box-shadows use brand-colored shadows (no default gray shadows)
 - [ ] GradientMesh component exists and is used behind hero, testimonials, and CTA sections
 - [ ] Glass-morphism cards include backdrop-blur-xl, border-white/20, and inset shadow highlight
 - [ ] GrainOverlay component exists and is included in BaseLayout
 - [ ] Noise/grain texture appears at 3-5% opacity
 
-### Animation checks
+**Animation**
 - [ ] Hero heading uses split-word text reveal (each word clips up from hidden overflow)
 - [ ] All section H2 headings have the `section-heading` class for scroll-triggered word reveal
 - [ ] Primary buttons have shine sweep pseudo-element on hover
@@ -294,15 +336,14 @@ Before handing off to the SEO auditor, run a design quality check against the ge
 - [ ] Header has scroll progress indicator bar (gradient, width tied to scroll %)
 - [ ] FAQ accordion uses GSAP height animation with delayed text fade-in
 - [ ] WhyUs icons animate with rotation on scroll enter
-- [ ] All animations check for prefers-reduced-motion
 
-### Typography checks
+**Typography**
 - [ ] Hero heading is text-5xl (mobile) to text-7xl (desktop)
 - [ ] At least one heading per page uses gradient text (bg-clip-text text-transparent)
 - [ ] Stats section numbers use text-8xl or larger
-- [ ] Section padding is py-24 to py-32 (never less than py-16)
+- [ ] Section padding is py-24 to py-32
 
-### Component polish checks
+**Component polish**
 - [ ] FAQ has animated plus-to-minus icon (two crossing spans, not a static symbol)
 - [ ] ContactForm uses floating labels (translate up on focus/filled)
 - [ ] ContactForm has animated success checkmark (SVG stroke-dashoffset)
@@ -310,7 +351,27 @@ Before handing off to the SEO auditor, run a design quality check against the ge
 - [ ] Testimonials use either ticker marquee or large featured quote (not a basic card grid)
 - [ ] CTA sections have decorative rotating circle outlines
 
-If any check fails, fix it directly before proceeding. Do not hand off to the auditor with known design quality issues.
+### Part C: Design fidelity checks (client-supplied-design mode only)
+
+Skip this entire part in default design mode. In client mode the question is not "is it maximalist enough" but "is it faithful." Check the built pages against the decoded design spec from STEP 0.5, side by side.
+
+**Fidelity to the export**
+- [ ] Palette matches the decoded hex values exactly — no invented tints, no drift toward the default studio palette
+- [ ] Fonts match the export's families, weights, and rough size scale
+- [ ] Component styling matches the export's actual treatment (if the mockup uses thin colored top borders on flat cards, the build does too — it does not "upgrade" them to glass-morphism)
+- [ ] Section rhythm and spacing follow the export, not the default `py-24`/`py-32` rule
+- [ ] Motion level matches the export: if the mockup is static or uses only simple CSS transitions, the build has no GSAP and no scroll-triggered reveals
+- [ ] Grid and layout patterns match (a simple `auto-fit` grid stays a simple `auto-fit` grid, not a bento grid)
+
+**No unrequested embellishment**
+- [ ] No gradient text, gradient mesh, grain overlay, glass-morphism, page transitions, or shine-sweep buttons unless the export actually contains an equivalent
+- [ ] No decorative elements invented that have no counterpart in the mockup
+
+**Extension beyond the mockup**
+- [ ] Pages and sections the mockup did not cover are built in the export's established visual language, not the default system
+- [ ] Any gap the export left unresolved was filled consistently across every page, not improvised per page
+
+If any check in the parts you ran fails, fix it directly before proceeding. Do not hand off to the auditor with known design quality issues. A Part B item failing in client-supplied mode is not a failure — it is the point, and it should not have been checked.
 
 ---
 
@@ -351,6 +412,7 @@ After each image is saved, update the relevant `.astro` component to reference t
 Spawn the **seo-auditor agent** using the Task tool. Pass it:
 - The full list of generated files
 - The business data summary
+- **Which design mode this build is in** — default, or client-supplied-design mode from STEP 0.5. Section 8 of the auditor's checklist branches on this exactly like STEP 5.5 does, and in client mode the auditor also needs the decoded design spec to check fidelity against.
 - Instructions to read every relevant file and run the full audit checklist (including Section 8: Design Quality checks)
 - A note that all images are real and final as of STEP 6, so Section 5 image checks (alt text, `<Image>` usage, formats, LCP preload) are live checks, not placeholder pass-throughs
 
