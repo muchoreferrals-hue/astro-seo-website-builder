@@ -62,6 +62,21 @@ You will be given the full list of generated project files. Read every relevant 
 - [ ] `public/llms.txt` exists with an H1 and H2 sections
 - [ ] **HARD FAIL:** Every list item under each H2 is a markdown link (`[title](url): description`), not plain bullet text — PageSpeed's Agentic Browsing audit fails the file entirely ("File does not appear to contain any links") if it finds zero links, even if the content itself reads fine.
 - [ ] Every link target is a real, live route on the built site (check `dist/client/` if unsure) — services, locations, about, contact at minimum.
+- [ ] Link URLs match the site's canonical trailing-slash form (if `trailingSlash: 'always'`, every link needs its slash — otherwise the file is a list of redirects)
+- [ ] Has an `## Agent Tools Available` section naming the registered WebMCP tools, and a `## Contact` section with the real phone, email, and hours from `site-config.ts`
+- [ ] No placeholder text anywhere — real business name in the H1, real services, real contact details
+
+### 1.8 WebMCP (Agentic Browsing)
+- [ ] `src/components/WebMCPTools.astro` exists and is rendered from `BaseLayout.astro` before `</body>`
+- [ ] Script is guarded with `if (!navigator.modelContext) return` and is `is:inline` with no framework import
+- [ ] Registers `search_site` (with `annotations: { readOnlyHint: true }`) and one conversion tool named for the business's real primary action
+- [ ] **HARD FAIL:** The conversion tool is implemented for real against `/api/contact` — a stub, a TODO, or a tool that only returns the phone number fails
+- [ ] `src/pages/api/search.json.ts` exists with `export const prerender = false`, returns `{ results: [{ title, url, excerpt }] }`, and indexes every collection plus the standalone pages
+- [ ] Search excerpts have Markdown stripped (no `**bold**` reaching an agent) and URLs match the canonical trailing-slash form
+- [ ] `ContactForm.astro` carries `toolname` + `tooldescription` on the `<form>`, and **every** input/select/textarea has a `name`, a `toolparamdescription`, and a real `<label>` — including the honeypot
+- [ ] **HARD FAIL:** No hidden decoy search form and no link to a `/search` page that does not exist
+- [ ] `public/_headers` sets `Permissions-Policy: tools=(self)` for `/*`
+- [ ] The conversion tool appends `source=webmcp`, and `api/contact.ts` whitelists it against that literal (not echoed) to prefix the business notification subject with `[Agent] `
 
 ---
 
@@ -209,6 +224,7 @@ Where possible, run or reference a Lighthouse pass and report the actual measure
 - [ ] Basic email format validation present
 - [ ] Uses Brevo for email sending (plain `fetch` to `https://api.brevo.com/v3/smtp/email`, no SDK)
 - [ ] Email recipient is populated from `siteConfig` (not hardcoded placeholder)
+- [ ] The form's `fetch` target matches the canonical URL form — if `trailingSlash: 'always'`, it posts to `/api/contact/`, since the slashless URL 308-redirects and costs a round trip on the main conversion path
 
 ---
 

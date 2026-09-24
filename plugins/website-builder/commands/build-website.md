@@ -170,6 +170,7 @@ Nothing else in this build process generates a `CLAUDE.md` for the new site, so 
 - Tailwind CSS
 - GSAP + ScrollTrigger for animation
 - Brevo (REST API, no SDK) for the contact form's transactional email
+- WebMCP tools registered site-wide via `src/components/WebMCPTools.astro`, backed by `src/pages/api/search.json.ts`
 - Images generated via the `nano-banana-pro` skill, converted PNG→WebP with `sharp`/`sharp-cli`
 
 ## Image Rule
@@ -191,6 +192,14 @@ See the niche-scout report from STEP 0 for the market validation this site was b
 
 ## Design Quality
 [IF a design export was supplied in STEP 0.5: "**Client-supplied design (permanent).** The site was built to match a client-approved Claude Design export (a decoded HTML/CSS/JS mockup) implemented as real Astro pages/components. [1-2 sentences describing the actual delivered aesthetic — e.g. flat/conversion-focused vs. the studio default]. This supersedes tech-builder's default maximalist design system; treat this look as the intended, final direction, not a placeholder." ELSE: standard note — "Design QA is gated by Impeccable (`/impeccable audit`) as the final design-slop check — see STEP 8.5 of the build process."]
+
+## WebMCP (Agentic Browsing)
+This site exposes WebMCP tools (https://developer.chrome.com/docs/ai/webmcp) to agentic browsers:
+- `search_site` — read-only keyword search, backed by `/api/search.json` (on-demand route).
+- `[conversion tool]` — submits a real lead through `/api/contact`, tagged `source=webmcp`.
+- `[conversion]_form` — the declarative tool on the visible contact form (contact and location pages only).
+
+`public/_headers` sets `Permissions-Policy: tools=(self)`, which the registration requires. `public/llms.txt` documents the tools for crawlers and must be updated whenever a tool, service, or page is added or renamed. Quote requests submitted by an agent arrive with `[Agent] ` prefixed to the notification email subject and a `Source` row in the details table, so they can be told apart from human form fills.
 
 ## Analytics
 [IF GTM Container ID was provided in Q10: "Google Tag Manager (`[GTM-XXXXXXX]`) is installed site-wide in `src/layouts/BaseLayout.astro` — script in `<head>`, noscript right after `<body>`. The contact form (`ContactForm.astro`) pushes a `contact_form_submit` event to `dataLayer` on successful submission, for GTM to catch as a lead-conversion trigger." ELSE: "No GTM container was provided at build time. See the handoff report's Analytics Setup checklist for how to add it — ask Claude to wire it into `BaseLayout.astro` once you have a Container ID."]
@@ -223,6 +232,7 @@ Pass this context:
 - Any testimonials
 - Tone preference
 - **GTM Container ID and GA4 Measurement ID from Q10**, if provided. If a GTM Container ID was given, instruct tech-builder to install the standard GTM snippet (head script + body noscript) site-wide in `BaseLayout.astro` and wire a `dataLayer.push({ event: 'contact_form_submit', ... })` call into `ContactForm.astro`'s successful-submit handler, exactly as described in tech-builder's Analytics & Conversion Tracking section. If no ID was given, skip this — it gets added later on request.
+- **WebMCP is part of every build, not an add-on.** Instruct tech-builder to register `search_site` plus one programmatic conversion tool named for this business's real primary action (`request_quote`, `book_consultation`, `check_availability`), build `/api/search.json`, put the declarative attributes on the real contact form rather than a hidden decoy search form, and add `public/_headers`. See its WebMCP (Agentic Browsing) section.
 - **If STEP 0.5 produced a client-supplied design spec:** pass the full decoded spec (palette, fonts, layout/component patterns, motion level) and explicitly instruct tech-builder to build in **client-supplied-design mode** — implement that spec faithfully instead of its own default Design Philosophy system below. Skip the design-personality instructions in that case.
 - **Otherwise, design personality preference from Q6b** (bold/warm/sleek/energetic). This informs layout choices, animation intensity, shape language, and color treatment. Specifically:
   - **Bold and modern:** sharp clip-paths, high-contrast gradients, strong diagonal section dividers, heavier shadows, aggressive hover states
@@ -358,10 +368,23 @@ npm run build
 
 If it fails, diagnose the errors and fix them. Re-run until the build succeeds with zero errors.
 
+Then verify the agentic-browsing artifacts survived the build, since they are easy to write and easy to forget to wire up:
+
+```bash
+grep -c modelContext dist/client/index.html                 # > 0: tools registered site-wide
+grep -o "name: '[a-z_]*'" dist/client/index.html            # both programmatic tools
+grep -o 'toolname="[^"]*"' dist/client/contact/index.html   # declarative form tool
+grep -c toolparamdescription dist/client/contact/index.html # one per form control
+cat dist/client/_headers                                    # Permissions-Policy: tools=(self)
+```
+
+A zero on any of these means the component exists but is not rendered. Fix it before moving on.
+
 Then report to the user:
 - Build status: SUCCESS
 - All pages generated (list them)
 - All images generated (list them)
+- WebMCP tools registered (list them) and `_headers` present
 
 ---
 
@@ -404,6 +427,13 @@ Present a clean summary to the user:
 - Schema markup: LocalBusiness, Service, FAQ, BreadcrumbList, WebSite
 - Sitemap: /sitemap-index.xml
 - Robots.txt: /robots.txt
+
+### Agentic Browsing (WebMCP)
+- WebMCP tools registered: `search_site`, `[conversion tool]`, `[conversion]_form` (declarative, on the contact form)
+- Search endpoint: `/api/search.json?q=` — indexes every service, location, and standalone page
+- `Permissions-Policy: tools=(self)` set via `public/_headers`
+- `llms.txt` documents the tools, the real services, and real contact details
+- Leads an AI agent submits arrive with `[Agent] ` in the notification email subject and a `Source` row in the details table, so you can tell them from human form fills
 
 ### Design QA
 - Impeccable audit: [PASS / findings logged and accepted — see below]
@@ -449,5 +479,6 @@ Claude cannot log into Google's dashboards directly, so these are done by you, w
 ### Verify Your Site
 - Lighthouse: target Performance >90, SEO 100, Accessibility >90 — check LCP ≤2.5s, INP ≤200ms, CLS <0.1 specifically
 - Schema: Google Rich Results Test
+- **Agentic Browsing:** run Lighthouse > Agentic Browsing on the live domain and confirm `webmcp-schema-validity` and `llms-txt-presence` pass. To see the tools directly, open the contact page in Chrome Canary with `chrome://flags/#enable-webmcp-testing` enabled, then run `await navigator.modelContext.getTools()` in the DevTools console — expect all three tools there, two on pages without the contact form.
 - Contact form: test end-to-end submission, then confirm in GTM Preview mode and GA4 Realtime that `contact_form_submit` / `generate_lead` actually fire
 ```

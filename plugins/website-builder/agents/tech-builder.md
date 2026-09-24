@@ -341,6 +341,7 @@ src/
 │   ├── FAQ.astro
 │   ├── CTA.astro
 │   ├── ContactForm.astro
+│   ├── WebMCPTools.astro
 │   ├── Breadcrumb.astro
 │   ├── SectionDivider.astro
 │   ├── PageTransition.astro
@@ -367,10 +368,12 @@ src/
     │   ├── index.astro
     │   └── [slug].astro
     └── api/
-        └── contact.ts
+        ├── contact.ts
+        └── search.json.ts
 
 public/
 ├── llms.txt
+├── _headers
 └── images/
     ├── (hero.webp placeholder)
     ├── services/
@@ -710,6 +713,7 @@ Renders 2-3 absolutely positioned divs, each 400-600px, with `radial-gradient` f
 - Includes `<PageTransition />` (once, at top level)
 - Wraps with `<Header />` and `<Footer />`
 - Slot for page content
+- Renders `<WebMCPTools />` as the last element before `</body>` — see WebMCP (Agentic Browsing) below
 - If a GTM Container ID was provided, includes the GTM head script and body noscript snippets — see Analytics & Conversion Tracking above
 
 ### Header.astro
@@ -797,11 +801,12 @@ Renders 2-3 absolutely positioned divs, each 400-600px, with `radial-gradient` f
 - **Sliding error messages:** validation messages slide down from `opacity-0 -translate-y-2` to `opacity-1 translate-y-0` with `transition-all duration-200`
 - **Field focus glow:** on focus, add a subtle colored glow: `shadow-[0_0_0_3px_rgba(var(--color-primary-rgb),0.1)]`
 - Fields: Name (required), Email (required), Phone (optional), Service (select, optional), Message (required)
-- Honeypot hidden field: `<input name="_honey" style="display:none" tabindex="-1" />`
+- Honeypot hidden field: `<input name="_honey" style="display:none" tabindex="-1" />`, carrying `toolparamdescription="Anti-spam trap field. The correct value is an empty string."` so a well-behaved agent leaves it blank while a field-filling bot still trips it
+- **Declarative WebMCP attributes** on the `<form>` and every input — this form is the site's conversion action and doubles as the declarative WebMCP tool. See WebMCP (Agentic Browsing) below.
 - Submit button: primary button style with loading spinner while pending
 - On success: shows inline confirmation with the animated checkmark (no page reload)
 - On error: shows error message with retry option
-- POSTs to `/api/contact`
+- POSTs to `/api/contact` (use `/api/contact/` **if and only if** `trailingSlash: 'always'` is set in astro.config.mjs — otherwise the slashless URL 308-redirects and every submission pays an extra round trip on the main conversion path)
 - If a GTM Container ID was provided, pushes the `contact_form_submit` dataLayer event on success — see Analytics & Conversion Tracking above
 
 ### Breadcrumb.astro
@@ -1164,6 +1169,142 @@ document.querySelectorAll('.form-field input, .form-field textarea, .form-field 
 
 ---
 
+## WebMCP (Agentic Browsing)
+
+Every site gets WebMCP tool registration (https://developer.chrome.com/docs/ai/webmcp) so agentic browsers can search the site and start a lead without scraping the DOM. PageSpeed Insights' "Agentic Browsing" category audits this (`webmcp-schema-validity`) alongside `llms-txt-presence`.
+
+Build **three** tools: `search_site` (read-only), one programmatic conversion tool, and the declarative form tool on the real contact form. No framework, no new dependency — plain inline script only.
+
+Tool-naming rules: one function per tool, verb names (`search_site`, `book_consultation`), not `start_search_process`. Descriptions use positive language ("Search pages by keyword"), never negative ("Do not use for...").
+
+### src/components/WebMCPTools.astro
+
+Registers the programmatic tools. Rendered once from BaseLayout, so both are available site-wide. Pull enum values from `site-config.ts` rather than hardcoding them, so the schema always matches the real form options.
+
+```astro
+---
+import { siteConfig } from '../data/site-config';
+const towns = [...siteConfig.locations.map((l) => l.city), 'Elsewhere in the area'];
+const services = [...siteConfig.services.map((s) => s.name), 'Not sure yet'];
+---
+
+<script is:inline define:vars={{ towns, services, phone: siteConfig.phone, email: siteConfig.email }}>
+  (function () {
+    if (typeof navigator === 'undefined' || !navigator.modelContext) return;
+
+    navigator.modelContext.registerTool({
+      name: 'search_site',
+      description:
+        'Search this site by keyword and return up to ten matching pages with title, URL, and excerpt. Covers [services], the [cities] service areas, pricing questions, and contact details.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Keyword or phrase, plain text.' },
+          limit: { type: 'integer', description: 'Max results, default 5, max 10.', default: 5 },
+        },
+        required: ['query'],
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      execute: async function (input) {
+        var q = String((input && input.query) || '').trim();
+        if (!q) return 'No query provided.';
+        var limit = Math.min(parseInt(input && input.limit, 10) || 5, 10);
+        try {
+          var res = await fetch('/api/search.json?q=' + encodeURIComponent(q) + '&limit=' + limit);
+          if (!res.ok) return 'Search failed with status ' + res.status + '.';
+          var data = await res.json();
+          var results = (data && data.results) || [];
+          if (!results.length) return 'No results for "' + q + '".';
+          return results.map(function (r) {
+            return '- ' + r.title + ': ' + r.url + (r.excerpt ? ' (' + r.excerpt + ')' : '');
+          }).join('\n');
+        } catch (e) {
+          return 'Search error: ' + e.message;
+        }
+      },
+    });
+
+    // The conversion tool. Name it for the business's actual primary action
+    // (request_quote, book_consultation, check_availability). Implement it for
+    // real against the existing /api/contact route — never a stub.
+    navigator.modelContext.registerTool({
+      name: 'request_quote',
+      description:
+        'Request a free quote from [Business]. Submits the visitor name, email, town, and service interest, then emails the business and sends the visitor a confirmation. Confirm the details with the visitor before calling this, because it sends a real message.',
+      inputSchema: { /* name, email, phone, town, service, message — enums from site-config */ },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+      execute: async function (input) {
+        // Validate name, a real email, and message before sending, mirroring
+        // the server checks, then POST FormData to /api/contact.
+        // Append source=webmcp so the lead is tagged (see below).
+        // Return plain language including the reply-time promise and the phone
+        // number, and a usable fallback on failure.
+      },
+    });
+  })();
+</script>
+```
+
+### src/pages/api/search.json.ts
+
+On-demand route (`export const prerender = false`, same as contact.ts) because it reads a `?q=` param. Returns `{ results: [{ title, url, excerpt }] }`.
+
+- Index **every** content collection (services, locations) plus the standalone pages (home, about, contact, the collection index pages, privacy). A search that cannot find the contact page is useless to an agent.
+- Score title hits above excerpt hits above body hits, and an exact phrase match in the title above any accumulation of loose term hits.
+- Match against extra text you never return (FAQ answers, benefits, process steps, neighbourhood names) so long-tail questions land on the right page.
+- **Strip Markdown from excerpts.** Collection copy is Markdown, and an agent should not receive `**bold**` syntax in a description.
+- **Emit URLs in the site's canonical form.** If `trailingSlash: 'always'` is set, every URL in the index needs its trailing slash, or you hand agents a list of redirects.
+- Missing `q` returns 400 with an empty `results` array, never a 500.
+- Send `cache-control: public, max-age=300` — the corpus only changes on redeploy.
+
+### Declarative form tool (on ContactForm.astro)
+
+**Do not build a hidden decoy search form.** These sites have no search results page, so an off-screen form pointing at `/search` is design slop that ships a broken promise. Put the declarative attributes on the real, visible contact form instead: it is the actual conversion action, it is a genuine form an agent can drive, and it satisfies `webmcp-schema-validity` properly.
+
+- `<form toolname="request_quote_form" tooldescription="...">` — describe filling in *and submitting* the on-page form, and name the towns served.
+- Every input, select, and textarea needs a `name`, a `toolparamdescription`, and a real `<label>`. Including the honeypot (see ContactForm.astro above).
+- Say which fields are required, and for selects say "Choose one of the listed options."
+- This form only exists on pages that render it (contact, location pages), so the programmatic tool above is what covers the rest of the site. That is why both exist.
+
+### public/_headers
+
+```
+# tools=(self) lets this origin register WebMCP tools.
+/*
+  Permissions-Policy: tools=(self)
+```
+
+The Cloudflare adapter prepends its own `/_astro/*` immutable Cache-Control rule to this file at build time, so the built copy will differ from the source. Verify the header on a live response, not in the file.
+
+### Tagging agent-submitted leads
+
+An agent can now put a lead in the owner's inbox without a human necessarily seeing it. The honeypot does **not** catch this and should not: the tool builds its own FormData and never sets `_honey`, so the field reads empty and passes. That is correct behavior for a submission channel you deliberately published.
+
+Make the leads distinguishable instead. In the conversion tool, `body.append('source', 'webmcp')`. In `api/contact.ts`, whitelist it against the literal (`const isAgentSubmission = field(form, 'source') === 'webmcp'`) rather than echoing it, since the field is POST-able by anyone and reaches the subject line. Then:
+
+- Prefix the **business notification** subject with `[Agent] `.
+- Add a `Source` row to the details table: `AI agent (WebMCP request_quote tool)` or `Website form`.
+- Leave the **customer confirmation** untouched — the tag is an internal signal and has no business showing up in what the visitor receives.
+
+Mention this in the STEP 9 handoff so the owner knows what `[Agent]` in a subject line means.
+
+### Verification
+
+Astro's CSRF check (`security.checkOrigin`, on by default) rejects POSTs with no `Origin` header, so a bare `curl` gets `403 Cross-site POST form submissions are forbidden`. That is the protection working: the in-page tool runs same-origin and the browser supplies the header. To test from the command line, add `-H "Origin: https://YOUR_DOMAIN.com"`.
+
+After deploy, confirm on the live domain:
+
+```bash
+curl -sI https://YOUR_DOMAIN.com/ | grep -i permissions-policy   # tools=(self)
+curl -sI https://YOUR_DOMAIN.com/llms.txt | head -1              # 200
+curl -s "https://YOUR_DOMAIN.com/api/search.json?q=<real-term>"  # real results
+curl -s https://YOUR_DOMAIN.com/ | grep -o "name: '[a-z_]*'"     # both tools
+```
+
+The two browser-only checks are a handoff item for Andy, not something the build can run: Chrome Canary with `chrome://flags/#enable-webmcp-testing`, then `await navigator.modelContext.getTools()` in the console, and Lighthouse > Agentic Browsing for `webmcp-schema-validity` and `llms-txt-presence`.
+
+---
+
 ## public/llms.txt
 
 Create this file to describe the business for AI crawlers. PageSpeed Insights' "Agentic Browsing" audit checks this file against the actual llms.txt spec (llmstxt.org): an H1, an optional blockquote summary, then H2 sections whose list items are markdown links (`[title](url): description`), not plain bullet text. **A file with no markdown links fails the audit** ("File does not appear to contain any links") even though the content itself looks fine — every list item must link to a real page on the site.
@@ -1186,7 +1327,23 @@ Create this file to describe the business for AI crawlers. PageSpeed Insights' "
 ## Company
 - [About](https://YOUR_DOMAIN.com/about): Who the business is.
 - [Contact](https://YOUR_DOMAIN.com/contact): How to reach them / request a quote.
+
+## Agent Tools Available
+This site registers WebMCP tools (https://developer.chrome.com/docs/ai/webmcp) for agentic browsers.
+- `search_site`: Search the site by keyword and return up to ten matching pages. Read-only.
+- `request_quote`: Submit a quote request. Sends a real message, so confirm details with the visitor first.
+- `request_quote_form`: The declarative form equivalent, on the contact and location pages.
+
+A machine-readable index is served at https://YOUR_DOMAIN.com/api/search.json?q=QUERY.
+
+## Contact
+- Phone: [real phone]
+- Email: [real email]
+- Hours: [real hours]
+- Service area: [real towns]. [Note "no public storefront" for service-area businesses.]
 ```
+
+Also state plainly where a page does **not** exist — e.g. "There is no separate pricing page; pricing is quoted per job." An agent that assumes `/pricing` exists will send visitors to a 404.
 
 Use the site's real, final slugs (check the built `dist/client/` output if unsure) — a link to a route that doesn't exist is worse than no llms.txt at all.
 
