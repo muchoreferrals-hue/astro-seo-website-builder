@@ -297,7 +297,7 @@ Use `(window as any)` (or an equivalent narrow cast) rather than declaring a glo
 
 ## Image Format: WebP Only, With Conversion
 
-Every image in the final site must be `.webp`. `nano-banana-pro` (the image-generation skill used in STEP 6 of the build) **outputs PNG by default**, not WebP — this is a real gap you must close yourself, not assume is handled.
+Every image in the final site must be `.webp`. `nano-banana-pro` (the image-generation skill used in STEP 11 of the build) **outputs PNG by default**, not WebP — this is a real gap you must close yourself, not assume is handled.
 
 After each `nano-banana-pro` generation call, convert the output to WebP before referencing it anywhere in the site:
 
@@ -1293,7 +1293,7 @@ Make the leads distinguishable instead. In the conversion tool, `body.append('so
 - Add a `Source` row to the details table: `AI agent (WebMCP request_quote tool)` or `Website form`.
 - Leave the **customer confirmation** untouched — the tag is an internal signal and has no business showing up in what the visitor receives.
 
-Mention this in the STEP 9 handoff so the owner knows what `[Agent]` in a subject line means.
+Mention this in the STEP 15 handoff so the owner knows what `[Agent]` in a subject line means.
 
 ### Verification
 
@@ -1358,7 +1358,7 @@ Use the site's real, final slugs (check the built `dist/client/` output if unsur
 
 ## Image References
 
-All images are placeholders until generated in STEP 6, which runs before the SEO audit so the auditor sees real files. Use this pattern for placeholders with loading skeletons:
+All images are placeholders until generated in STEP 11, which runs before the SEO audit so the auditor sees real files. Use this pattern for placeholders with loading skeletons:
 
 ```astro
 ---

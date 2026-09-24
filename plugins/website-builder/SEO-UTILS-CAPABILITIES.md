@@ -63,13 +63,13 @@ process. If a capability below is not listed here, it is still unused.
 
 | Capability | Wired into |
 |---|---|
-| Keyword metrics `source` selector | niche-scout Step 2, STEP 0.6 step 4, STEP 9 ongoing work |
-| Search Intent Bulk Check | STEP 0.6 step 3 (free triage before any paid check) |
-| SERP Clustering `reuse_word_order_twins` | niche-scout Step 2, STEP 3.5 step 1 |
-| Content Gap metrics auto-save | niche-scout Step 2 reports it; STEP 0.6 / 3.5 read `keyword_metrics` first |
+| Keyword metrics `source` selector | niche-scout Step 2, STEP 3 step 4, STEP 15 ongoing work |
+| Search Intent Bulk Check | STEP 3 step 3 (free triage before any paid check) |
+| SERP Clustering `reuse_word_order_twins` | niche-scout Step 2, STEP 7 step 1 |
+| Content Gap metrics auto-save | niche-scout Step 2 reports it; STEP 3 / 7 read `keyword_metrics` first |
 | GMB Rank Tracker (grid scan) | niche-scout Step 1 fallback when Playwright is blocked |
-| GMB Progress view | STEP 9 ongoing work, with a launch-day baseline scan |
-| GSC Internal Links | STEP 9 ongoing work |
+| GMB Progress view | STEP 15 ongoing work, with a launch-day baseline scan |
+| GSC Internal Links | STEP 15 ongoing work |
 
 **Known live defect this closed:** niche-scout called `get_keyword_suggestions` and
 `check_keyword_metrics` with no `source`, so every market validation silently ran on `labs`

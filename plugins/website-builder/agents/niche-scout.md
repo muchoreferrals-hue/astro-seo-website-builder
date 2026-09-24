@@ -44,7 +44,7 @@ If Google serves a CAPTCHA or the results panel doesn't render, retry once with 
 
 You do **not** need to own a Google Business Profile to do this. The tracker reads the public map pack at each grid point, so pointing it at a competitor is legitimate competitive research and is the intended use here.
 
-This returns more than the Playwright check ever did: not just how many competitors and how many reviews, but **which competitor owns which part of the map**. Record that geographic split — it ranks location pages by real opportunity instead of by population guess, and it feeds STEP 3.5's information architecture directly.
+This returns more than the Playwright check ever did: not just how many competitors and how many reviews, but **which competitor owns which part of the map**. Record that geographic split — it ranks location pages by real opportunity instead of by population guess, and it feeds STEP 7's information architecture directly.
 
 Grid scans cost DataForSEO credits and take a few minutes, which is why this is a fallback and not the default. Only report "map pack check inconclusive" if the fallback also fails, and say which of the two failed.
 
@@ -65,11 +65,11 @@ Run this regardless of the Step 1 verdict — it sharpens the recommendation eit
    - `google_ads`, `dfs_search_volume` and `clickstream_bulk` need Andy's own DataForSEO credentials. If they are unavailable, say so in the report rather than silently falling back to the `labs` number.
 3. **`create_serp_clustering_report`** on the expanded keyword set (seed terms + suggestions), with **`reuse_word_order_twins: true`** (v2.5.0). Local keyword sets are saturated with word-order variants ("pet waste removal keswick" vs "keswick pet waste removal"), and this shares one scraped SERP between them instead of paying twice. Leave it on by default; the savings are what make clustering a wide set affordable.
 
-   This groups keywords into topic clusters — read the result for clusters that look thin or uncontested; those are candidate pages to build. **Keep the cluster IDs.** STEP 3.5 uses them to decide whether two keywords are one page or two, which is the main defence against building pages that cannibalize each other.
+   This groups keywords into topic clusters — read the result for clusters that look thin or uncontested; those are candidate pages to build. **Keep the cluster IDs.** STEP 7 uses them to decide whether two keywords are one page or two, which is the main defence against building pages that cannibalize each other.
 4. **`get_organic_keywords`** on the top 2-3 organic competitor domains found in step 1 above, to see the breadth of what they already rank for and where their coverage is weak.
 5. **Content gap and backlink gap, via competitor rotation** (there's no real target domain yet, so rotate through the found competitors instead): for each of the top 2-3 organic competitor domains, call `get_content_gap` and `get_backlink_gap` with that domain as `target` and the other competitors as `competitors`. A keyword or referring domain that comes up as a gap across *multiple* rotations means nobody in the market has it — flag these as the strongest opportunities. A gap that shows up for only one competitor still tells you who's weakest.
 
-   Since v2.4.0, keyword metrics received by Content Gap **auto-save to the `keyword_metrics` table**. Everything this step pulls stays queryable afterwards via `query_database`, so STEP 0.6 and STEP 3.5 can reuse it for free instead of re-paying for the same numbers. Say so in your report so downstream steps know to look there first.
+   Since v2.4.0, keyword metrics received by Content Gap **auto-save to the `keyword_metrics` table**. Everything this step pulls stays queryable afterwards via `query_database`, so STEP 3 and STEP 7 can reuse it for free instead of re-paying for the same numbers. Say so in your report so downstream steps know to look there first.
 
 ---
 
@@ -97,7 +97,7 @@ Keyword Opportunity:  (every row carries the source it came from)
     were re-run — with the number the paid source actually returned]
 
 Uncontested Clusters: [topic clusters from SERP clustering with no dominant competitor
-  coverage — include the cluster ID for each, STEP 3.5 needs them]
+  coverage — include the cluster ID for each, STEP 7 needs them]
 
 True Market Gaps (appeared across multiple competitor rotations):
   - Keywords: [list]
@@ -109,7 +109,7 @@ and gap findings above, not a generic statement]
 
 SEO Utils Workspace: [workspace name] (id: [id])
 Cached metrics: [note that Content Gap metrics auto-saved to `keyword_metrics`
-  and are queryable via `query_database`, so STEP 0.6 / 3.5 should look there first]
+  and are queryable via `query_database`, so STEP 3 / 3.5 should look there first]
 ```
 
 Return one of these blocks per city, followed by an overall recommendation if multiple cities were checked (e.g. "proceed with Austin and San Antonio, reconsider Dallas — see per-city reasoning above").

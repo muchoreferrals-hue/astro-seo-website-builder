@@ -39,7 +39,7 @@ You will also be told which **design mode** the build is in: default, or client-
 - [ ] `tailwind.config.mjs` has custom color palette (not default Tailwind colors only)
 
 ### 1.1b Architecture Conformance
-The build has a `docs/site-architecture.csv` from STEP 3.5. It is the contract the site was built against — audit against it, not against your own idea of what pages should exist.
+The build has a `docs/site-architecture.csv` from STEP 7. It is the contract the site was built against — audit against it, not against your own idea of what pages should exist.
 - [ ] **HARD FAIL:** Every built route appears as a row in `docs/site-architecture.csv`, and every CSV row has a corresponding built page. A page nobody planned and a planned page nobody built are both defects.
 - [ ] **HARD FAIL:** `primary_keyword` is unique across every row — two pages sharing a primary keyword is keyword cannibalization baked into the architecture
 - [ ] Each page's `<title>` and H1 match the `title_tag` and `h1` planned for its row (minor copy refinement is fine; a different keyword target is not)
@@ -49,7 +49,7 @@ The build has a `docs/site-architecture.csv` from STEP 3.5. It is the contract t
 - [ ] Location pages meet their `unique_content_target` (45% by default)
 - [ ] Every `url_slug` in the CSV carries its trailing slash and matches the built route exactly
 
-If `docs/site-architecture.csv` is missing, record this whole subsection as N/A and note in the report that the build skipped STEP 3.5.
+If `docs/site-architecture.csv` is missing, record this whole subsection as N/A and note in the report that the build skipped STEP 7.
 
 ### 1.2 Sitemap and Robots
 - [ ] `@astrojs/sitemap` is integrated; sitemap will be generated at `/sitemap-index.xml`
@@ -266,9 +266,9 @@ Where possible, run or reference a Lighthouse pass and report the actual measure
 - **Default design mode** → 8.1 + 8.2 through 8.7
 - **Client-supplied-design mode** → 8.1 + 8.8 (skip 8.2 through 8.7 entirely and mark them N/A in your report, not FAIL)
 
-In client-supplied-design mode the client approved a specific design, usually a plain and restrained one. Checks 8.2 through 8.7 encode the default studio system, so running them there produces a wall of failures on a site that is exactly what was signed off, and "fixing" them would undo the client's approved design. tech-builder branches the same way (see its Client-Supplied Design Override section), as does STEP 5.5 of the build process. **If the orchestrator did not tell you the mode, ask before auditing Section 8 — do not guess from what you see in the files.**
+In client-supplied-design mode the client approved a specific design, usually a plain and restrained one. Checks 8.2 through 8.7 encode the default studio system, so running them there produces a wall of failures on a site that is exactly what was signed off, and "fixing" them would undo the client's approved design. tech-builder branches the same way (see its Client-Supplied Design Override section), as does STEP 10 of the build process. **If the orchestrator did not tell you the mode, ask before auditing Section 8 — do not guess from what you see in the files.**
 
-Note: this section covers structural/specification compliance. A separate, complementary check for AI-design-slop — generic-looking spacing, inconsistent components, off-brand color drift, and similar visual-quality issues that a checklist can't easily catch — runs via Impeccable (`/impeccable audit`) as STEP 8.5 of the build process, after this audit passes. Do not skip Section 8 on the assumption Impeccable will catch it; the two checks cover different things.
+Note: this section covers structural/specification compliance. A separate, complementary check for AI-design-slop — generic-looking spacing, inconsistent components, off-brand color drift, and similar visual-quality issues that a checklist can't easily catch — runs via Impeccable (`/impeccable audit`) as STEP 14 of the build process, after this audit passes. Do not skip Section 8 on the assumption Impeccable will catch it; the two checks cover different things.
 
 ### 8.1 Universal Design Quality (both modes)
 
@@ -331,7 +331,7 @@ These hold regardless of aesthetic. A flat, restrained design passes all of them
 
 ### 8.8 Fidelity to the Supplied Design (client-supplied-design mode only)
 
-The orchestrator passes you the decoded design spec from STEP 0.5 (palette, fonts, layout/component patterns, motion level). Audit the built pages against that spec. The question here is faithfulness, not maximalism.
+The orchestrator passes you the decoded design spec from STEP 2 (palette, fonts, layout/component patterns, motion level). Audit the built pages against that spec. The question here is faithfulness, not maximalism.
 
 - [ ] Palette matches the decoded hex values exactly — no invented tints, no drift toward the default studio palette
 - [ ] Fonts match the export's families, weights, and rough size scale

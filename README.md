@@ -54,7 +54,7 @@ The plugin spawns four specialist agents:
 | `seo-writer` | Writes all content: titles, metas, body copy, FAQs, CTAs |
 | `seo-auditor` | Runs a full PASS/FAIL audit before images are generated |
 
-## Market validation (Step 0)
+## Market validation (STEP 1)
 
 Before onboarding, the plugin checks whether your target niche + city is worth building for:
 

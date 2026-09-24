@@ -18,12 +18,12 @@ Every site built with this skill is deployed via **Cloudflare's Git integration*
 
 - All code changes — during this build and in every future session working on this site — go: edit → commit → `git push` to GitHub. Cloudflare watches the connected repo and automatically pulls and builds on every push to the production branch (typically `main`).
 - Never run `npx wrangler deploy` (or `wrangler pages deploy`) directly as the way to ship a change. That bypasses git entirely, so GitHub silently falls behind what's actually live — the whole point of this policy is that GitHub is always the source of truth for what's deployed.
-- Set this up once during STEP 9 handoff (Cloudflare Dashboard → Workers & Pages → Create → Connect to Git). After that, "deploy" always means "push to GitHub" — say so explicitly in the handoff report and in the generated CLAUDE.md (STEP 3) so this rule persists for any future Claude session working on the codebase.
+- Set this up once during STEP 15 handoff (Cloudflare Dashboard → Workers & Pages → Create → Connect to Git). After that, "deploy" always means "push to GitHub" — say so explicitly in the handoff report and in the generated CLAUDE.md (STEP 6) so this rule persists for any future Claude session working on the codebase.
 - The only Cloudflare-side commands that remain fine to run directly are ones that aren't a code deploy: `npx wrangler secret put <NAME>` (secrets), `npx wrangler types` (type generation), and read-only commands like `wrangler deployments list`.
 
 ---
 
-## STEP 0: Niche & Market Validation
+## STEP 1: Niche & Market Validation
 
 Before the onboarding questionnaire, validate that the niche and target city (or cities) are actually worth building for.
 
@@ -35,15 +35,15 @@ Then, for each city, spawn a **niche-scout** agent via the Task tool (in paralle
 
 Present the combined report to the user exactly as the agent(s) returned it (per-city verdicts + an overall recommendation if more than one city was checked).
 
-**Soft gate:** if any city's verdict is RECONSIDER, ask: "One or more cities came back RECONSIDER — see the reasoning above. Continue building anyway? (YES to continue / NO to stop here so you can pick different cities)." Wait for an explicit answer before proceeding. A PROCEED or PROCEED WITH CAUTION verdict does not require this pause — move straight to STEP 1, but still show the full report so the market context is visible before onboarding starts.
+**Soft gate:** if any city's verdict is RECONSIDER, ask: "One or more cities came back RECONSIDER — see the reasoning above. Continue building anyway? (YES to continue / NO to stop here so you can pick different cities)." Wait for an explicit answer before proceeding. A PROCEED or PROCEED WITH CAUTION verdict does not require this pause — move straight to STEP 4, but still show the full report so the market context is visible before onboarding starts.
 
-This is never a hard block. If the user says continue, proceed to STEP 1 regardless of the verdict — niche-scout informs the decision, it doesn't make it.
+This is never a hard block. If the user says continue, proceed to STEP 4 regardless of the verdict — niche-scout informs the decision, it doesn't make it.
 
-Keep the SEO Utils workspace ID(s) niche-scout reports — they're needed later for the CLAUDE.md generated in STEP 3.
+Keep the SEO Utils workspace ID(s) niche-scout reports — they're needed later for the CLAUDE.md generated in STEP 6.
 
 ---
 
-## STEP 0.5: Design Source (Client-Supplied Design Check)
+## STEP 2: Design Source (Client-Supplied Design Check)
 
 Before the onboarding questionnaire, find out whether this build has a client-approved design to match, or should use the studio's default design system.
 
@@ -52,19 +52,19 @@ Before the onboarding questionnaire, find out whether this build has a client-ap
 **If a design export is supplied:**
 1. Read the export file(s) in full (HTML/CSS/JS).
 2. Decode/extract: the color palette (hex values for primary/secondary/accent/neutral), font choices, layout patterns (hero structure, card style, section rhythm), component patterns (buttons, forms, nav), and the overall level of motion/animation used (none, subtle, or heavy).
-3. This extracted spec is now the **authoritative design reference** for the whole build. It supersedes STEP 1 Q6 (color palette) and Q6b (design personality) — skip asking those, or ask them only to fill gaps the export doesn't resolve (e.g. it doesn't specify a personality for pages/sections the mockup didn't cover).
-4. It also supersedes tech-builder's own default "Design Philosophy" system (GSAP animation, glass-morphism, gradient mesh, bento grids, etc. — see tech-builder.md). Tell tech-builder explicitly in STEP 4 that this build is in **client-supplied-design mode**: implement the decoded export faithfully as real Astro components, not the default system.
-5. Note this permanently in the generated CLAUDE.md (STEP 3): mark the design section `**Client-supplied design (permanent).**` and describe the aesthetic actually delivered, so future work on this codebase treats the plainer/different look as the intended, final direction rather than a placeholder to be "improved" back toward the default maximalist style.
+3. This extracted spec is now the **authoritative design reference** for the whole build. It supersedes STEP 4 Q6 (color palette) and Q6b (design personality) — skip asking those, or ask them only to fill gaps the export doesn't resolve (e.g. it doesn't specify a personality for pages/sections the mockup didn't cover).
+4. It also supersedes tech-builder's own default "Design Philosophy" system (GSAP animation, glass-morphism, gradient mesh, bento grids, etc. — see tech-builder.md). Tell tech-builder explicitly in STEP 8 that this build is in **client-supplied-design mode**: implement the decoded export faithfully as real Astro components, not the default system.
+5. Note this permanently in the generated CLAUDE.md (STEP 6): mark the design section `**Client-supplied design (permanent).**` and describe the aesthetic actually delivered, so future work on this codebase treats the plainer/different look as the intended, final direction rather than a placeholder to be "improved" back toward the default maximalist style.
 
-6. Carry the mode forward. **STEP 5.5 (Part B vs Part C) and the auditor's Section 8 (8.2-8.7 vs 8.8) both branch on it**, and the auditor needs the decoded spec itself to check fidelity. Tell it the mode explicitly in STEP 7 — an auditor that assumes default mode will fail a client-approved design on every check.
+6. Carry the mode forward. **STEP 10 (Part B vs Part C) and the auditor's Section 8 (8.2-8.7 vs 8.8) both branch on it**, and the auditor needs the decoded spec itself to check fidelity. Tell it the mode explicitly in STEP 12 — an auditor that assumes default mode will fail a client-approved design on every check.
 
-**If no design export is supplied:** proceed normally — Q6/Q6b in STEP 1 drive the design, and tech-builder's default Design Philosophy system applies in full.
+**If no design export is supplied:** proceed normally — Q6/Q6b in STEP 4 drive the design, and tech-builder's default Design Philosophy system applies in full.
 
 ---
 
-## STEP 0.6: Competitive Service & Language Mining
+## STEP 3: Competitive Service & Language Mining
 
-Runs after STEP 0 (it consumes niche-scout's competitor list) and before STEP 1 (its output feeds Q2). Do not skip it and do not reorder it.
+Runs after STEP 1 (it consumes niche-scout's competitor list) and before STEP 4 (its output feeds Q2). Do not skip it and do not reorder it.
 
 **Why this step exists.** Without it, Q2 asks the client to name their own services, and a client names them the way the trade names them. That is how a site gets built on "pet waste removal" when the searches are for "pooper scooper service" and "dog poop pickup" — terms carrying 2-3x the volume at lower competition, discovered only after launch and retrofitted into copy. Industry vocabulary and customer vocabulary are different languages, and only one of them gets typed into Google.
 
@@ -100,7 +100,7 @@ Use the labels to triage before paying for volume:
 
 **`check_keyword_metrics`** on the surviving terms, industry phrasing and customer phrasing alike, so the comparison is like for like.
 
-- Check `keyword_metrics` via **`query_database`** first. Content Gap auto-saves there since v2.4.0, so part of this may already be paid for from STEP 0.
+- Check `keyword_metrics` via **`query_database`** first. Content Gap auto-saves there since v2.4.0, so part of this may already be paid for from STEP 1.
 - Pass `source` explicitly. Start on `labs`, and **re-check anything that returns null, empty, or zero** with `source: 'google_ads'` or `dfs_search_volume` before recording it as low demand. This matters most in exactly the markets these sites are built for: `labs` rejects Canadian province-level locations outright.
 - Record the source alongside every number.
 
@@ -113,27 +113,27 @@ Produce a table:
 
 The recommendation rule: **the customer term leads in copy, the industry term is retained as a secondary.** "Weekly Yard Scooping" can stay the formal service label while H1s, FAQs and body copy speak in the phrasing people search. Never drop the industry term entirely — it carries relevance and some customers do use it.
 
-Show this table to the user, then run STEP 1. **Q2 changes shape because of it:** instead of "list every service you offer," present the harvested list and ask the client to confirm, cut, or add, with the customer-language recommendation already attached to each row.
+Show this table to the user, then run STEP 4. **Q2 changes shape because of it:** instead of "list every service you offer," present the harvested list and ask the client to confirm, cut, or add, with the customer-language recommendation already attached to each row.
 
-Carry the full keyword set, the intent labels, and the cluster IDs forward. STEP 3.5 builds the site architecture from them.
+Carry the full keyword set, the intent labels, and the cluster IDs forward. STEP 7 builds the site architecture from them.
 
 ---
 
-## STEP 1: Onboarding Questionnaire
+## STEP 4: Onboarding Questionnaire
 
 Ask the following questions using `AskUserQuestion`. Ask them one at a time and wait for each answer before continuing.
 
 **Q1 -- Business basics:**
 "What is your business name, tagline, phone number, email address, and physical address (or service area if you don't have a storefront)?"
 
-**Q2 -- Services:** (driven by STEP 0.6 — do not ask this cold)
-Present the reconciled service table from STEP 0.6 and ask the client to confirm, cut, or add:
+**Q2 -- Services:** (driven by STEP 3 — do not ask this cold)
+Present the reconciled service table from STEP 3 and ask the client to confirm, cut, or add:
 
 "Here's what the top competitors in your market offer, and how customers actually search for each one. Confirm which of these you do, cut any you don't, and add anything missing. For each one you keep, give me a 1-2 sentence description and what makes you better at it than competitors.
 
 Note the 'customers search for' column — where it differs from the industry term, the site will lead with the customer phrasing in headings and copy while keeping your formal service name as the label. That's deliberate: it's the phrasing that gets typed into Google."
 
-If STEP 0.6 could not run (no competitors found, or tooling unavailable), fall back to asking cold — "List every service you offer..." — and say plainly in the summary that services were not validated against search demand.
+If STEP 3 could not run (no competitors found, or tooling unavailable), fall back to asking cold — "List every service you offer..." — and say plainly in the summary that services were not validated against search demand.
 
 **Q3 -- Locations:**
 "What is your primary city/location? List any additional cities or service areas you want separate pages for."
@@ -178,7 +178,7 @@ Do not proceed until the user confirms.
 
 ---
 
-## STEP 2: Color Palette Extraction (Conditional)
+## STEP 5: Color Palette Extraction (Conditional)
 
 If the user provided a screenshot path in Q6, use the **Skill tool** to call `nano-banana-pro` in analysis mode on the screenshot:
 
@@ -194,7 +194,7 @@ If the user said "choose for me", select a professional palette appropriate to t
 
 ---
 
-## STEP 3: Scaffold the Astro Project
+## STEP 6: Scaffold the Astro Project
 
 Run the following commands in sequence using the Bash tool. Run them from the current working directory (the project folder where `/build-website` was invoked).
 
@@ -220,11 +220,11 @@ npm install -D astro-robots-txt
 
 After each command, check for errors before proceeding. If a command fails, diagnose and fix the issue before continuing.
 
-This scaffold now initializes a real local git repo (`--git true`). Nothing gets pushed anywhere automatically — see STEP 9 for the manual push instructions once Andy has reviewed the site.
+This scaffold now initializes a real local git repo (`--git true`). Nothing gets pushed anywhere automatically — see STEP 15 for the manual push instructions once Andy has reviewed the site.
 
 ### Generate CLAUDE.md
 
-Nothing else in this build process generates a `CLAUDE.md` for the new site, so write one now at the project root (`CLAUDE.md`), before spawning the specialist agents, so it's in place for the whole build. Populate it from data already in hand at this point (business data from STEP 1, niche-scout findings and workspace ID from STEP 0):
+Nothing else in this build process generates a `CLAUDE.md` for the new site, so write one now at the project root (`CLAUDE.md`), before spawning the specialist agents, so it's in place for the whole build. Populate it from data already in hand at this point (business data from STEP 4, niche-scout findings and workspace ID from STEP 1):
 
 ```markdown
 # [Business Name] — Site Notes for Claude
@@ -261,10 +261,10 @@ Every image in this site must be `.webp`. `nano-banana-pro` outputs PNG by defau
 This site's market research and ongoing rank tracking live in the SEO Utils workspace: **[workspace name from niche-scout, e.g. "Emergency Plumber — Austin, TX"]** (id: `[workspace id]`). Reuse this workspace for all future SEO Utils calls on this site — do not create a new one.
 
 ## Niche Scout Findings
-See the niche-scout report from STEP 0 for the market validation this site was built on (map pack saturation, keyword opportunities, content/backlink gaps). Summary: [1-2 sentence recap of the recommendation and why].
+See the niche-scout report from STEP 1 for the market validation this site was built on (map pack saturation, keyword opportunities, content/backlink gaps). Summary: [1-2 sentence recap of the recommendation and why].
 
 ## Design Quality
-[IF a design export was supplied in STEP 0.5: "**Client-supplied design (permanent).** The site was built to match a client-approved Claude Design export (a decoded HTML/CSS/JS mockup) implemented as real Astro pages/components. [1-2 sentences describing the actual delivered aesthetic — e.g. flat/conversion-focused vs. the studio default]. This supersedes tech-builder's default maximalist design system; treat this look as the intended, final direction, not a placeholder." ELSE: standard note — "Design QA is gated by Impeccable (`/impeccable audit`) as the final design-slop check — see STEP 8.5 of the build process."]
+[IF a design export was supplied in STEP 2: "**Client-supplied design (permanent).** The site was built to match a client-approved Claude Design export (a decoded HTML/CSS/JS mockup) implemented as real Astro pages/components. [1-2 sentences describing the actual delivered aesthetic — e.g. flat/conversion-focused vs. the studio default]. This supersedes tech-builder's default maximalist design system; treat this look as the intended, final direction, not a placeholder." ELSE: standard note — "Design QA is gated by Impeccable (`/impeccable audit`) as the final design-slop check — see STEP 14 of the build process."]
 
 ## WebMCP (Agentic Browsing)
 This site exposes WebMCP tools (https://developer.chrome.com/docs/ai/webmcp) to agentic browsers:
@@ -281,21 +281,21 @@ This site exposes WebMCP tools (https://developer.chrome.com/docs/ai/webmcp) to 
 This site deploys via **Cloudflare's Git integration**, connected to this repo's GitHub remote. "Deploying" a change always means: commit it, then `git push` to `main` — Cloudflare automatically pulls and builds from GitHub on every push. **Never run `npx wrangler deploy` (or `wrangler pages deploy`) to ship code changes** — that bypasses GitHub and leaves it out of sync with what's actually live. `npx wrangler secret put <NAME>` (for secrets) and other non-deploy `wrangler` commands are still fine to run directly.
 ```
 
-If more than one city was targeted, either generate one CLAUDE.md per site (if each city gets its own project) or list all workspaces/findings if this is a single multi-location site — match whatever structure Andy chose in STEP 1 Q3.
+If more than one city was targeted, either generate one CLAUDE.md per site (if each city gets its own project) or list all workspaces/findings if this is a single multi-location site — match whatever structure Andy chose in STEP 4 Q3.
 
 ---
 
-## STEP 3.5: Information Architecture & Keyword Map
+## STEP 7: Information Architecture & Keyword Map
 
-Runs after the scaffold exists (so the artifacts have somewhere to live) and **immediately before STEP 4**. This is a **hard gate**: Andy approves the architecture before a single page gets built.
+Runs after the scaffold exists (so the artifacts have somewhere to live) and **immediately before STEP 8**. This is a **hard gate**: Andy approves the architecture before a single page gets built.
 
-**Why here.** STEP 4 spawns tech-builder and seo-writer in parallel off the same business data, and each infers structure independently — routes and nesting on one side, target keywords and headings on the other. Nothing reconciles them. This step makes the architecture a **contract both agents build against** instead of something each invents. It is also the last moment changing the sitemap is free: afterwards it means rebuilt pages, rewritten copy, and redirects.
+**Why here.** STEP 8 spawns tech-builder and seo-writer in parallel off the same business data, and each infers structure independently — routes and nesting on one side, target keywords and headings on the other. Nothing reconciles them. This step makes the architecture a **contract both agents build against** instead of something each invents. It is also the last moment changing the sitemap is free: afterwards it means rebuilt pages, rewritten copy, and redirects.
 
 ### 1. Decide the page set
 
-Work from STEP 0.6's keyword set, intent labels, and STEP 0's SERP cluster IDs.
+Work from STEP 3's keyword set, intent labels, and STEP 1's SERP cluster IDs.
 
-**Cluster before counting pages.** Two keywords in the same SERP cluster are **one page**, not two. If "dog poop removal keswick" and "pooper scooper keswick" return substantially the same SERP, building both is building two pages that compete with each other. Re-run **`run_serp_clustering`** with `reuse_word_order_twins: true` if the STEP 0 set did not cover everything harvested in STEP 0.6.
+**Cluster before counting pages.** Two keywords in the same SERP cluster are **one page**, not two. If "dog poop removal keswick" and "pooper scooper keswick" return substantially the same SERP, building both is building two pages that compete with each other. Re-run **`run_serp_clustering`** with `reuse_word_order_twins: true` if the STEP 1 set did not cover everything harvested in STEP 3.
 
 **Then apply intent.** Transactional and commercial clusters earn a page. Informational clusters become an FAQ entry or a section on an existing page. Record the decision either way — an informational keyword with no home is a keyword you will rediscover in GSC in six months.
 
@@ -308,7 +308,7 @@ Work from STEP 0.6's keyword set, intent labels, and STEP 0's SERP cluster IDs.
 
 ### 2. Write `docs/site-architecture.csv`
 
-The master sheet, and the thing both STEP 4 agents build from. One row per page:
+The master sheet, and the thing both STEP 8 agents build from. One row per page:
 
 | Column | Contents |
 |---|---|
@@ -365,13 +365,13 @@ Show Andy the mermaid diagram, the page count, and the CSV summary (slug, primar
 
 > "This is the site architecture — [N] pages, [N] services, [N] locations. Changing it after the build means rebuilt pages, rewritten copy and redirects. Approve to continue, or tell me what to change."
 
-**Wait for explicit approval before STEP 4.** Then set the architecture files as required reading for both agents: tech-builder builds exactly these routes with exactly this nesting, seo-writer writes to exactly these keywords, titles and H1s. Neither invents a page that is not in the CSV.
+**Wait for explicit approval before STEP 8.** Then set the architecture files as required reading for both agents: tech-builder builds exactly these routes with exactly this nesting, seo-writer writes to exactly these keywords, titles and H1s. Neither invents a page that is not in the CSV.
 
 Add a `## Site Architecture` section to the site's `CLAUDE.md` pointing at both files, so future sessions change the map before they change the site.
 
 ---
 
-## STEP 4: Spawn Specialist Agents in Parallel
+## STEP 8: Spawn Specialist Agents in Parallel
 
 In a single message, spawn both agents simultaneously using the Task tool.
 
@@ -379,10 +379,10 @@ In a single message, spawn both agents simultaneously using the Task tool.
 
 ### tech-builder agent
 
-Provide the full business data collected in Step 1, the color palette from Step 2, and the list of all services and locations. Instruct it to build the entire Astro project file structure as defined in the tech-builder agent specification.
+Provide the full business data collected in STEP 4, the color palette from STEP 5, and the list of all services and locations. Instruct it to build the entire Astro project file structure as defined in the tech-builder agent specification.
 
 Pass this context:
-- **`docs/site-architecture.csv` and `docs/site-architecture.mmd` from STEP 3.5 — required reading for both agents, and the contract they build against.** tech-builder builds exactly the routes and nesting in the CSV. seo-writer writes to exactly the `primary_keyword`, `title_tag` and `h1` in each row, and to the customer phrasing from STEP 0.6 rather than trade vocabulary. **Neither agent invents a page that is not a row in the CSV, and neither silently retargets a page's primary keyword.** If either believes the architecture is wrong, it says so and stops rather than diverging from it.
+- **`docs/site-architecture.csv` and `docs/site-architecture.mmd` from STEP 7 — required reading for both agents, and the contract they build against.** tech-builder builds exactly the routes and nesting in the CSV. seo-writer writes to exactly the `primary_keyword`, `title_tag` and `h1` in each row, and to the customer phrasing from STEP 3 rather than trade vocabulary. **Neither agent invents a page that is not a row in the CSV, and neither silently retargets a page's primary keyword.** If either believes the architecture is wrong, it says so and stops rather than diverging from it.
 - Business name, tagline, contact info, address/service area
 - All services (names, descriptions, differentiators, slugs)
 - All locations (names, slugs, whether primary or secondary)
@@ -393,7 +393,7 @@ Pass this context:
 - Tone preference
 - **GTM Container ID and GA4 Measurement ID from Q10**, if provided. If a GTM Container ID was given, instruct tech-builder to install the standard GTM snippet (head script + body noscript) site-wide in `BaseLayout.astro` and wire a `dataLayer.push({ event: 'contact_form_submit', ... })` call into `ContactForm.astro`'s successful-submit handler, exactly as described in tech-builder's Analytics & Conversion Tracking section. If no ID was given, skip this — it gets added later on request.
 - **WebMCP is part of every build, not an add-on.** Instruct tech-builder to register `search_site` plus one programmatic conversion tool named for this business's real primary action (`request_quote`, `book_consultation`, `check_availability`), build `/api/search.json`, put the declarative attributes on the real contact form rather than a hidden decoy search form, and add `public/_headers`. See its WebMCP (Agentic Browsing) section.
-- **If STEP 0.5 produced a client-supplied design spec:** pass the full decoded spec (palette, fonts, layout/component patterns, motion level) and explicitly instruct tech-builder to build in **client-supplied-design mode** — implement that spec faithfully instead of its own default Design Philosophy system below. Skip the design-personality instructions in that case.
+- **If STEP 2 produced a client-supplied design spec:** pass the full decoded spec (palette, fonts, layout/component patterns, motion level) and explicitly instruct tech-builder to build in **client-supplied-design mode** — implement that spec faithfully instead of its own default Design Philosophy system below. Skip the design-personality instructions in that case.
 - **Otherwise, design personality preference from Q6b** (bold/warm/sleek/energetic). This informs layout choices, animation intensity, shape language, and color treatment. Specifically:
   - **Bold and modern:** sharp clip-paths, high-contrast gradients, strong diagonal section dividers, heavier shadows, aggressive hover states
   - **Warm and approachable:** wave/curve section dividers, softer rounded corners (rounded-3xl to rounded-4xl), gentler animations (longer durations, softer easing), warm-toned gradient meshes
@@ -404,13 +404,13 @@ Pass this context:
 
 Provide the same full business data. Instruct it to write all page content: titles, meta descriptions, H1s, body copy, FAQs, CTAs, stat items, and breadcrumb labels for every page (homepage, about, contact, services index, each service page, locations index, each location page).
 
-Pass the same context as tech-builder, plus the design personality preference so the writer knows to keep hero H1s short (4-8 words) for large-scale display and to structure stats as number + label pairs. Also pass the niche-scout findings from STEP 0 (uncontested keyword clusters, true market gaps) so the writer can target that language and those topics directly in copy, not just generic service/location content.
+Pass the same context as tech-builder, plus the design personality preference so the writer knows to keep hero H1s short (4-8 words) for large-scale display and to structure stats as number + label pairs. Also pass the niche-scout findings from STEP 1 (uncontested keyword clusters, true market gaps) so the writer can target that language and those topics directly in copy, not just generic service/location content.
 
-Wait for both agents to complete before proceeding to Step 5.
+Wait for both agents to complete before proceeding to STEP 9.
 
 ---
 
-## STEP 5: Integrate Content into Files
+## STEP 9: Integrate Content into Files
 
 After both agents return their outputs, use the tech-builder agent again (or directly via Write/Edit tools) to merge the seo-writer's content into the files the tech-builder created. Specifically:
 
@@ -424,16 +424,16 @@ After both agents return their outputs, use the tech-builder agent again (or dir
 
 ---
 
-## STEP 5.5: Design Quality Review
+## STEP 10: Design Quality Review
 
 Before handing off to the SEO auditor, run a design quality check against the generated code. Verify each item by reading the relevant files directly.
 
 **This step is mode-aware.** Part A runs on every build. Then run **either** Part B **or** Part C, never both:
 
-- **Default design mode** (no design export supplied in STEP 0.5) → Part A + Part B
-- **Client-supplied-design mode** (a design export was decoded in STEP 0.5) → Part A + Part C
+- **Default design mode** (no design export supplied in STEP 2) → Part A + Part B
+- **Client-supplied-design mode** (a design export was decoded in STEP 2) → Part A + Part C
 
-Running Part B against a client-supplied build is a mistake: the client's approved design deliberately omits most of the default system, so the checklist reports a wall of failures on a site that is exactly what was signed off, and the instruction to "fix it" would undo STEP 0.5. tech-builder already branches this way (see its Client-Supplied Design Override section); this step has to match.
+Running Part B against a client-supplied build is a mistake: the client's approved design deliberately omits most of the default system, so the checklist reports a wall of failures on a site that is exactly what was signed off, and the instruction to "fix it" would undo STEP 2. tech-builder already branches this way (see its Client-Supplied Design Override section); this step has to match.
 
 ### Part A: Universal checks (run on every build)
 
@@ -508,7 +508,7 @@ Skip this entire part in client-supplied-design mode.
 
 ### Part C: Design fidelity checks (client-supplied-design mode only)
 
-Skip this entire part in default design mode. In client mode the question is not "is it maximalist enough" but "is it faithful." Check the built pages against the decoded design spec from STEP 0.5, side by side.
+Skip this entire part in default design mode. In client mode the question is not "is it maximalist enough" but "is it faithful." Check the built pages against the decoded design spec from STEP 2, side by side.
 
 **Fidelity to the export**
 - [ ] Palette matches the decoded hex values exactly — no invented tints, no drift toward the default studio palette
@@ -530,11 +530,11 @@ If any check in the parts you ran fails, fix it directly before proceeding. Do n
 
 ---
 
-## STEP 6: Image Generation
+## STEP 11: Image Generation
 
 Generate all required images using the **Skill tool** with `nano-banana-pro`.
 
-**This runs before the SEO audit, not after.** The auditor's image checks (alt text quality, `<Image>` vs `<img>`, LCP preload on the hero) are meaningless against placeholders — it has to see the real files or those checks pass vacuously and the problems surface at STEP 8 with no audit trail.
+**This runs before the SEO audit, not after.** The auditor's image checks (alt text quality, `<Image>` vs `<img>`, LCP preload on the hero) are meaningless against placeholders — it has to see the real files or those checks pass vacuously and the problems surface at STEP 13 with no audit trail.
 
 Generate images in this order. For each, save the output to the specified path.
 
@@ -562,14 +562,14 @@ After each image is saved, update the relevant `.astro` component to reference t
 
 ---
 
-## STEP 7: SEO Audit
+## STEP 12: SEO Audit
 
 Spawn the **seo-auditor agent** using the Task tool. Pass it:
 - The full list of generated files
 - The business data summary
-- **Which design mode this build is in** — default, or client-supplied-design mode from STEP 0.5. Section 8 of the auditor's checklist branches on this exactly like STEP 5.5 does, and in client mode the auditor also needs the decoded design spec to check fidelity against.
+- **Which design mode this build is in** — default, or client-supplied-design mode from STEP 2. Section 8 of the auditor's checklist branches on this exactly like STEP 10 does, and in client mode the auditor also needs the decoded design spec to check fidelity against.
 - Instructions to read every relevant file and run the full audit checklist (including Section 8: Design Quality checks)
-- A note that all images are real and final as of STEP 6, so Section 5 image checks (alt text, `<Image>` usage, formats, LCP preload) are live checks, not placeholder pass-throughs
+- A note that all images are real and final as of STEP 11, so Section 5 image checks (alt text, `<Image>` usage, formats, LCP preload) are live checks, not placeholder pass-throughs
 
 The auditor will return a structured report (PASS/FAIL per check with file:line references).
 
@@ -577,13 +577,13 @@ If there are FAILs, address each one:
 - Content failures: fix via seo-writer or directly
 - Technical failures: fix via tech-builder or directly
 - Design quality failures: fix via tech-builder or directly
-- Image failures (wrong format, weak alt text, missing `<Image>`): regenerate or re-convert via the STEP 6 process, then re-audit
+- Image failures (wrong format, weak alt text, missing `<Image>`): regenerate or re-convert via the STEP 11 process, then re-audit
 
 Re-run the auditor until all checks PASS.
 
 ---
 
-## STEP 8: Final Build Validation
+## STEP 13: Final Build Validation
 
 Run the production build:
 ```bash
@@ -612,9 +612,9 @@ Then report to the user:
 
 ---
 
-## STEP 8.5: Design Slop Audit (Impeccable)
+## STEP 14: Design Slop Audit (Impeccable)
 
-Impeccable's design hook (if installed) already reviewed files in real time as tech-builder wrote them in STEP 4/5 — see tech-builder's instructions. This step is a final, holistic pass across representative pages, run once the build itself is validated.
+Impeccable's design hook (if installed) already reviewed files in real time as tech-builder wrote them in STEP 8/9 — see tech-builder's instructions. This step is a final, holistic pass across representative pages, run once the build itself is validated.
 
 1. Check whether this project has already been initialized for Impeccable (it creates a local context/config location the first time `/impeccable init` runs — check with Glob/Bash before assuming). If not yet initialized, run `/impeccable init` first so it has design context for this specific codebase; skip this if it's already set up.
 2. Run `/impeccable audit` against a representative sample: the homepage, one service page, one location page, and the contact page.
@@ -625,7 +625,7 @@ This is a quality gate, not a hard blocker on the whole build.
 
 ---
 
-## STEP 9: Handoff Report
+## STEP 15: Handoff Report
 
 Present a clean summary to the user:
 
@@ -671,11 +671,11 @@ Present a clean summary to the user:
 - CLAUDE.md written to project root with tech stack, WebP rule, Core Web Vitals targets, SEO Utils workspace, and niche-scout findings
 
 ### Market Validation
-- Niche-scout verdict: [PROCEED / PROCEED WITH CAUTION / RECONSIDER — as decided in STEP 0]
+- Niche-scout verdict: [PROCEED / PROCEED WITH CAUTION / RECONSIDER — as decided in STEP 1]
 - SEO Utils workspace: [workspace name] (id: [id])
 
 ### Next Steps
-Everything so far is local only — nothing has been pushed to GitHub or deployed. This project now has a real local git repo (initialized in STEP 3); review the site (`npm run dev`) before doing anything further.
+Everything so far is local only — nothing has been pushed to GitHub or deployed. This project now has a real local git repo (initialized in STEP 6); review the site (`npm run dev`) before doing anything further.
 
 1. When you're happy with it, commit it: `git add -A && git commit -m "Initial site build"`.
 2. Push to GitHub: create a repo (via `gh repo create` or on github.com), then `git remote add origin <repo-url>` and `git push -u origin main`.
@@ -709,13 +709,13 @@ Claude cannot log into Google's dashboards directly, so these are done by you, w
 
 ### Ongoing SEO Utils Work (once the site has data)
 
-These are not build steps. They need live data, so they start weeks after launch. Reuse the existing SEO Utils workspace from STEP 0 — do not create a new one.
+These are not build steps. They need live data, so they start weeks after launch. Reuse the existing SEO Utils workspace from STEP 1 — do not create a new one.
 
-**GSC Internal Links** (v2.5.0) — once Search Console has a few weeks of data, run Internal Links. It finds pages that need more inbound links and **suggests the exact sentence and anchor text** for each one. On a small local site this is the highest-leverage authority lever available: no outreach, no link building, just structure. The STEP 3.5 architecture already planned the linking, so treat this as the feedback loop that shows where the plan and reality diverged.
+**GSC Internal Links** (v2.5.0) — once Search Console has a few weeks of data, run Internal Links. It finds pages that need more inbound links and **suggests the exact sentence and anchor text** for each one. On a small local site this is the highest-leverage authority lever available: no outreach, no link building, just structure. The STEP 7 architecture already planned the linking, so treat this as the feedback loop that shows where the plan and reality diverged.
 
 **GMB Rank Tracker — Progress view** (v2.3.0) — compares grid rankings across date ranges, so you see whether map-pack coverage is actually *expanding*, not just today's snapshot. Local service businesses live or die in the map pack.
 
-Set the **baseline grid scan now**, at launch, even before the client's own Google Business Profile is established. The tracker reads the public map pack, so it works pointed at competitors, and without a run from launch day the Progress view has nothing to compare against later. If STEP 0's map pack fallback already ran a grid scan, that scan is the baseline.
+Set the **baseline grid scan now**, at launch, even before the client's own Google Business Profile is established. The tracker reads the public map pack, so it works pointed at competitors, and without a run from launch day the Progress view has nothing to compare against later. If STEP 1's map pack fallback already ran a grid scan, that scan is the baseline.
 
 **Keyword metrics source** — when re-checking volumes later, pass `source` explicitly and re-check anything returning null on `labs` against `google_ads` or `dfs_search_volume`. `labs` rejects Canadian province-level locations outright, and a null there is a source limitation, not a finding.
 
