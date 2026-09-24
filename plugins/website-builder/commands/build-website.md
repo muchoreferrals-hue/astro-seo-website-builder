@@ -314,27 +314,11 @@ If any check fails, fix it directly before proceeding. Do not hand off to the au
 
 ---
 
-## STEP 6: SEO Audit
+## STEP 6: Image Generation
 
-Spawn the **seo-auditor agent** using the Task tool. Pass it:
-- The full list of generated files
-- The business data summary
-- Instructions to read every relevant file and run the full audit checklist (including the new Section 8: Design Quality checks)
+Generate all required images using the **Skill tool** with `nano-banana-pro`.
 
-The auditor will return a structured report (PASS/FAIL per check with file:line references).
-
-If there are FAILs, address each one:
-- Content failures: fix via seo-writer or directly
-- Technical failures: fix via tech-builder or directly
-- Design quality failures: fix via tech-builder or directly
-
-Re-run the auditor until all checks PASS.
-
----
-
-## STEP 7: Image Generation
-
-After the auditor gives a full PASS, generate all required images using the **Skill tool** with `nano-banana-pro`.
+**This runs before the SEO audit, not after.** The auditor's image checks (alt text quality, `<Image>` vs `<img>`, LCP preload on the hero) are meaningless against placeholders — it has to see the real files or those checks pass vacuously and the problems surface at STEP 8 with no audit trail.
 
 Generate images in this order. For each, save the output to the specified path.
 
@@ -359,6 +343,26 @@ Generate images in this order. For each, save the output to the specified path.
 - Output: `public/images/team.webp`
 
 After each image is saved, update the relevant `.astro` component to reference the correct path using Astro's `<Image>` component (not `<img>`). The seo-writer should provide alt text for each image (keyword-relevant, descriptive, specific).
+
+---
+
+## STEP 7: SEO Audit
+
+Spawn the **seo-auditor agent** using the Task tool. Pass it:
+- The full list of generated files
+- The business data summary
+- Instructions to read every relevant file and run the full audit checklist (including Section 8: Design Quality checks)
+- A note that all images are real and final as of STEP 6, so Section 5 image checks (alt text, `<Image>` usage, formats, LCP preload) are live checks, not placeholder pass-throughs
+
+The auditor will return a structured report (PASS/FAIL per check with file:line references).
+
+If there are FAILs, address each one:
+- Content failures: fix via seo-writer or directly
+- Technical failures: fix via tech-builder or directly
+- Design quality failures: fix via tech-builder or directly
+- Image failures (wrong format, weak alt text, missing `<Image>`): regenerate or re-convert via the STEP 6 process, then re-audit
+
+Re-run the auditor until all checks PASS.
 
 ---
 
