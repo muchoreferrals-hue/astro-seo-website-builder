@@ -39,7 +39,9 @@ Present the combined report to the user exactly as the agent(s) returned it (per
 
 This is never a hard block. If the user says continue, proceed to STEP 4 regardless of the verdict — niche-scout informs the decision, it doesn't make it.
 
-Keep the SEO Utils workspace ID(s) niche-scout reports — they're needed later for the CLAUDE.md generated in STEP 6.
+Keep the SEO Utils workspace ID niche-scout reports — it's needed later for the CLAUDE.md generated in STEP 6.
+
+**One site, one workspace.** niche-scout creates a single workspace covering every city in the run, named for the primary city. If it reports more than one, that is a bug — do not proceed with fragmented workspaces, and do not create extras yourself. Per-city workspaces scatter one site's rank tracking, GMB reports and GSC data across several places that have to be cross-referenced by hand forever.
 
 ---
 
@@ -263,7 +265,9 @@ Every image in this site must be `.webp`. `nano-banana-pro` outputs PNG by defau
 99%+ on the internal SEO audit checklist (seo-auditor agent) before shipping. Every location page must carry at least 45% genuinely unique, local-area-specific content (distinct from the standard 40% cross-page differentiation rule).
 
 ## SEO Utils Workspace
-This site's market research and ongoing rank tracking live in the SEO Utils workspace: **[workspace name from niche-scout, e.g. "Emergency Plumber — Austin, TX"]** (id: `[workspace id]`). Reuse this workspace for all future SEO Utils calls on this site — do not create a new one.
+This site has **exactly one** SEO Utils workspace, covering every town it serves: **[workspace name, e.g. "turfandtail.ca — Pet Waste Removal, Keswick ON"]** (id: `[workspace id]`).
+
+Reuse it for every future SEO Utils call on this site — rank tracking, GMB reports, GSC, clustering, indexing. **Do not create a second workspace for a secondary town.** Location pages are pages on this site, not separate sites, and splitting them fragments the data permanently.
 
 ## Niche Scout Findings
 See the niche-scout report from STEP 1 for the market validation this site was built on (map pack saturation, keyword opportunities, content/backlink gaps). Summary: [1-2 sentence recap of the recommendation and why].
@@ -286,7 +290,7 @@ This site exposes WebMCP tools (https://developer.chrome.com/docs/ai/webmcp) to 
 This site deploys via **Cloudflare's Git integration**, connected to this repo's GitHub remote. "Deploying" a change always means: commit it, then `git push` to `main` — Cloudflare automatically pulls and builds from GitHub on every push. **Never run `npx wrangler deploy` (or `wrangler pages deploy`) to ship code changes** — that bypasses GitHub and leaves it out of sync with what's actually live. `npx wrangler secret put <NAME>` (for secrets) and other non-deploy `wrangler` commands are still fine to run directly.
 ```
 
-If more than one city was targeted, either generate one CLAUDE.md per site (if each city gets its own project) or list all workspaces/findings if this is a single multi-location site — match whatever structure Andy chose in STEP 4 Q3.
+If more than one city was targeted, match whatever structure Andy chose in STEP 4 Q3: one CLAUDE.md per site if each city gets its own separate project and domain, or a single CLAUDE.md listing every town's findings if this is one multi-location site. Either way **each site has exactly one workspace** — a multi-location site does not get one per town.
 
 ---
 
@@ -681,7 +685,7 @@ Present a clean summary to the user:
 
 ### Market Validation
 - Niche-scout verdict: [PROCEED / PROCEED WITH CAUTION / RECONSIDER — as decided in STEP 1]
-- SEO Utils workspace: [workspace name] (id: [id])
+- SEO Utils workspace: [workspace name] (id: [id]) — one workspace covering all [N] towns
 
 ### Next Steps
 Everything so far is local only — nothing has been pushed to GitHub or deployed. This project now has a real local git repo (initialized in STEP 6); review the site (`npm run dev`) before doing anything further.
@@ -811,7 +815,18 @@ Two known messages, neither of which is a real failure on a fresh setup:
 
 SEO Utils also runs this on a schedule once configured: it pulls sitemap URLs daily at 5:00 AM local, checks index at 6:00 AM, and auto-submits every 10 minutes. That only runs while the app is open.
 
-### 5. Report what actually happened
+### 5. Name the workspace after the domain
+
+The site now has a domain, which it did not at STEP 1 when niche-scout created the workspace. Call **`update_workspace`** to rename it so it leads with the domain:
+
+```
+"{domain} — {Niche}, {Primary City} {State}"
+e.g. "turfandtail.ca — Pet Waste Removal, Keswick ON"
+```
+
+This is what makes `list_workspaces` read as one row per site. Do not create a workspace here — rename the existing one.
+
+### 6. Report what actually happened
 
 Do not report "submitted" as a synonym for "indexed". State both, per surface:
 
