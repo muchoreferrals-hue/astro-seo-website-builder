@@ -12,6 +12,35 @@ Work through the following steps in order. Do NOT skip steps.
 
 ---
 
+## This Skill Is Self-Gating (Superpowers interop)
+
+If the Superpowers skills library is installed, its `using-superpowers` skill says process
+skills run first and implementation skills follow. **Do not apply that here.** This command
+is already a process skill, and it carries its own approval gates:
+
+- **STEP 1** — niche-scout's soft gate on a RECONSIDER verdict
+- **STEP 4** — the questionnaire summary, which blocks on an explicit YES
+- **STEP 7** — the information-architecture gate, where the page set, keyword targeting and
+  site structure are signed off before anything is built
+
+Running `superpowers:brainstorming` in front of this puts a design-and-approval cycle ahead
+of a skill that already does exactly that, twice. Start at STEP 1 and let these gates work.
+
+The rest of Superpowers applies normally throughout:
+
+- **`systematic-debugging`** for any build failure, broken route, or unexpected behavior.
+  Root cause before fixes, as always.
+- **`verification-before-completion`** before claiming a step passed, the build succeeded,
+  the audit came back clean, or the site deployed. This one matters most here: STEP 13,
+  STEP 15 and STEP 16 all end in claims about a live site, and every one of them should be
+  backed by the command output that proves it.
+- `requesting-code-review`, `using-git-worktrees`, `dispatching-parallel-agents` as normal.
+
+This exemption covers this command only. Changes to the plugin itself, or any other work,
+follow the usual Superpowers process.
+
+---
+
 ## Deployment Policy (applies to this build and all future changes)
 
 Every site built with this skill is deployed via **Cloudflare's Git integration** (Workers Builds / Pages, connected to the site's GitHub repo), never via a direct `npx wrangler deploy` from a local machine.
