@@ -187,6 +187,31 @@ For each page in: index.astro, about.astro, contact.astro, services/index.astro,
 - [ ] Location pages: 700-1000 words
 - [ ] About page: 500-700 words
 
+### 4.5 LSI / Semantic Term Coverage
+
+Word count alone does not prove topical coverage. A page can hit 1,000 words entirely in commercial vocabulary — what the service is, what it costs, how to book — and carry none of the terms that co-occur with the topic on every page that already ranks for it. Check both halves separately, because sites reliably pass one and fail the other.
+
+**Geographic LSI (usually passes):**
+- [ ] Each location page names at least **6 distinct local entities** beyond the city name itself — subdivisions, streets, lakes/parks, landmarks, regions, local events, school or community names
+- [ ] The homepage's service-area section names at least 3 local entities
+- [ ] At least one FAQ per location page contains a named local entity
+
+**Topical LSI (usually fails):**
+- [ ] **HARD FAIL:** The site contains at least one page or section carrying the niche's *cause-and-effect* vocabulary — the health, damage-mechanism, nuisance, or regulatory terms behind the service — not only its commercial vocabulary. A site with zero of these terms is commercial-only and cannot hold informational rankings.
+- [ ] Each service page carries **at least 8 distinct topical terms** from the seo-writer's term bank
+- [ ] The site covers **at least 60%** of the term bank overall
+- [ ] Each service page has **at least 2 FAQs answering "why"** (mechanism, risk, or misconception) rather than only "how we operate" (scheduling, pricing, access)
+- [ ] The niche's central customer misconception is addressed explicitly somewhere on the site
+- [ ] Terms appear in genuinely useful sentences, not stuffed lists — **FAIL any paragraph that reads as a term dump**
+- [ ] Any add-on, upsell, or service modifier mentioned in a price or hero block is explained somewhere in body copy (an unexplained `+$35 deodorizing` line is a wasted topical hook)
+
+**Claim safety:**
+- [ ] **HARD FAIL:** No unsourced medical, legal, or regulatory claim stated as fact
+- [ ] Health, safety and environmental statements defer appropriately ("ask your doctor / veterinarian / inspector") rather than advising
+- [ ] Any claim flagged `UNVERIFIED_CLAIMS` in the seo-writer deliverable has been checked or removed
+
+**How to run this check.** Build the term bank list from the seo-writer's `LSI_TERMS_USED` deliverable (or derive it from the niche if that deliverable is missing), then grep the content files for each term and report counts. Report the covered percentage and name the specific missing clusters — "zero health/parasite vocabulary, zero environmental vocabulary" is an actionable finding; "could use more LSI keywords" is not.
+
 ---
 
 ## Checklist Section 5: Images and Performance

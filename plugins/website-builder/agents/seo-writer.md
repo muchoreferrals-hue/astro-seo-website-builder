@@ -290,6 +290,41 @@ Write CTAs that are specific and action-oriented. Vary them across pages. Struct
 
 ---
 
+## LSI and Semantic Term Coverage
+
+A page that repeats its primary keyword and nothing else reads as thin to a search engine even when it reads fine to a human. What signals genuine topical coverage is the **surrounding vocabulary** — the terms that co-occur with the topic across every page that already ranks for it. Two kinds matter, and most local service sites nail one and completely miss the other.
+
+**Geographic LSI** — the proof the business is actually local. Named suburbs and subdivisions, arterial roads, lakes and parks, school catchments, townships and regions, local landmarks and annual events, even the names of the builders who put up the newer developments. This is the same vocabulary the 45% local-specificity rule already drives you toward, so if you are hitting that, you are probably fine here.
+
+**Topical LSI** — the vocabulary of *why the service matters*. This is the one that gets missed, because commercial copy naturally gravitates to what the service is and what it costs, never to the problem underneath it. For every trade there is a cluster of cause-and-effect vocabulary that every informational page in the niche uses and most local service sites contain zero of:
+
+| Trade | Topical cluster the site usually has none of |
+|---|---|
+| Pet waste removal | roundworm, hookworm, Giardia, E. coli, nitrogen burn, lawn scorch, odor bacteria, flies, runoff, phosphorus |
+| Roofing | ice damming, underlayment, flashing, soffit, attic ventilation, granule loss, deck rot |
+| HVAC | SEER rating, short cycling, refrigerant charge, heat exchanger, static pressure, zoning |
+| Pest control | harborage, IGR, exclusion, frass, nymph, bait station, thermal remediation |
+| Lawn care | thatch, aeration, dollar spot, grub damage, pre-emergent, soil pH |
+
+### Build the term bank first
+
+Before writing a word of body copy, produce a **topical LSI term bank** for the niche, grouped into 4-6 clusters (typically: health/safety, damage/failure mechanism, nuisance/symptom, environmental/regulatory, adjacent services). Source it from STEP 7's `docs/lsi-terms.csv` if the architecture step produced one; otherwise derive it from **`run_nlp_analysis`** on the top-ranking pages for the primary keyword, plus **`get_bing_related_keywords`** and **`fetch_autocomplete_keywords`** on the head term.
+
+### Placement rules
+
+- **Every term must earn its sentence.** A term bank is an input, not a checklist to stuff. If a term cannot be used in a sentence that a customer would find genuinely useful, leave it out and say so.
+- **FAQs are the right home for most of it.** They are already `FAQPage`-schema'd, so a well-phrased question carries topical vocabulary *and* competes for a featured snippet or AI-overview citation. Aim for **at least 2 FAQs per service page** that answer the *why* rather than the *how we operate* — the mechanism of damage, the health risk, the misconception customers hold.
+- **Target the misconception explicitly.** Every trade has one ("dog poop is fertilizer", "a bigger furnace heats better", "bleach kills mold for good"). Answering it head-on is the single highest-value snippet target on the site and naturally pulls in half the term bank.
+- **Cover at minimum 60% of the term bank across the site**, and put **no fewer than 8 distinct topical terms on each service page**. Below that the page is commercial-only and will not hold informational rankings.
+- **Never make a medical, legal, or safety claim you cannot source.** State the mechanism plainly, then defer: "for anything specific to your situation, ask your doctor / veterinarian / inspector." Flag any claim you were not able to verify so it can be checked before publish.
+- **Vary the form.** Singular and plural, the technical term and the customer's word for it ("nitrogen burn" and "yellow patches", "Giardia" and "stomach bug"). Searchers use both.
+
+### Where geographic LSI goes
+
+Location pages, primarily — but the homepage's service-area section and at least one FAQ per location page should carry named local entities too. A location page that names the city ten times and no street, subdivision, lake, or landmark once will pass a keyword check and still read as templated.
+
+---
+
 ## Differentiation Tracking
 
 Before finalizing, run this check for every pair of similar pages:
@@ -321,6 +356,11 @@ STAT_ITEMS:
 FAQS:
   - Q: [question]
     A: [answer]
+LSI_TERMS_USED:
+  geographic: [comma-separated local entities named on this page]
+  topical: [comma-separated topical terms used on this page]
+UNVERIFIED_CLAIMS:
+  - [any health/safety/regulatory claim that needs checking before publish, or "none"]
 CTAS:
   above_fold:
     button_text: [3-5 word button text]

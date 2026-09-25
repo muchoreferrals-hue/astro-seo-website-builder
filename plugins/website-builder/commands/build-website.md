@@ -373,9 +373,43 @@ The master sheet, and the thing both STEP 8 agents build from. One row per page:
 | `word_count_target` | Rough target, from what the SERP competitors actually run |
 | `cta_primary` | The conversion action this page drives |
 | `unique_angle` | What this page says that no other page on the site says |
+| `lsi_clusters` | Pipe-delimited term-bank cluster ids this page is responsible for covering |
 | `status` | `planned` at this stage |
 
 **Internal linking is designed here, not left to emerge.** On a small local site internal linking is the one authority lever fully under our control — no outreach, no link building, just structure. Filling `internal_links_in` and `internal_links_out` deliberately now is worth more than discovering the gaps through GSC's Internal Links report a year later. Every page needs at least one inbound link from a page at lower depth, and orphan pages are a build error.
+
+### 2b. Build the LSI term bank → `docs/lsi-terms.csv`
+
+The keyword map says what each page targets. The term bank says what vocabulary proves the page actually covers the topic. Both agents in STEP 8 need it, and it is far cheaper to build once here than to retrofit after the copy is written.
+
+**Two halves, and only one of them is a struggle.**
+
+*Geographic terms* fall out of STEP 1 and STEP 3 almost for free — subdivisions, arterial roads, lakes, parks, townships, landmarks, annual events, and the builder names attached to newer developments. Harvest them per town.
+
+*Topical terms* are the ones that get missed, every time. They are the cause-and-effect vocabulary behind the service — the health risk, the damage mechanism, the nuisance, the environmental or regulatory angle — and a commercially-written local site routinely contains **zero** of them. That absence is invisible to a keyword check and obvious to a search engine comparing the site against pages that do rank informationally.
+
+**How to harvest the topical half:**
+
+1. **`run_nlp_analysis`** on the top 5-10 ranking URLs for the primary head term. This is the highest-signal source: it surfaces the vocabulary those pages actually use, not what we assume they use.
+2. **`get_bing_related_keywords`** and **`fetch_autocomplete_keywords`** on the head term, filtered to informational intent — "is X bad for", "how long does X", "does X cause".
+3. **`get_content_gap`** against the two strongest competitors, to catch clusters they cover and we have not planned for.
+4. Failing all of the above (new niche, thin data), write the clusters from first principles and mark the source column `manual` so it can be validated later.
+
+**Write `docs/lsi-terms.csv`:**
+
+| Column | Contents |
+|---|---|
+| `term` | The term or phrase |
+| `cluster_id` | Short id, e.g. `health-parasite`, `damage-mechanism`, `nuisance`, `environmental`, `adjacent-service`, `geo-{town}` |
+| `kind` | `topical` or `geographic` |
+| `source` | `nlp_analysis` / `bing_related` / `autocomplete` / `content_gap` / `manual` |
+| `assigned_page_id` | Which `page_id` is responsible for using it; blank if unassigned |
+| `customer_synonym` | The plain-language word a customer would use ("yellow patches" for "nitrogen burn") |
+| `claim_risk` | `none` / `health` / `legal` / `regulatory` — anything not `none` needs a source or a deferral line before publish |
+
+**Assign every topical cluster to a page.** An unassigned cluster is a cluster that will not get written. Most land on service pages as FAQs; environmental and regulatory clusters usually belong on the location page closest to the relevant feature (a shoreline town, a conservation area, a municipal bylaw).
+
+**Informational clusters from step 1's intent pass land here.** That is the "record the decision either way" promise above being kept — an informational keyword with no page of its own becomes an FAQ with a named owner in this file, rather than something rediscovered in GSC in six months.
 
 ### 3. Write `docs/site-architecture.mmd`
 
@@ -399,13 +433,13 @@ Note: the WebP-only rule applies to site images under `src/` and `public/images/
 
 ### 5. Gate
 
-Show Andy the mermaid diagram, the page count, and the CSV summary (slug, primary keyword, volume, intent per row). Ask:
+Show Andy the mermaid diagram, the page count, the CSV summary (slug, primary keyword, volume, intent per row), and the LSI term-bank summary (cluster ids, term count per cluster, and which page owns each cluster). Ask:
 
 > "This is the site architecture — [N] pages, [N] services, [N] locations. Changing it after the build means rebuilt pages, rewritten copy and redirects. Approve to continue, or tell me what to change."
 
-**Wait for explicit approval before STEP 8.** Then set the architecture files as required reading for both agents: tech-builder builds exactly these routes with exactly this nesting, seo-writer writes to exactly these keywords, titles and H1s. Neither invents a page that is not in the CSV.
+**Wait for explicit approval before STEP 8.** Then set the architecture files as required reading for both agents: tech-builder builds exactly these routes with exactly this nesting, seo-writer writes to exactly these keywords, titles and H1s, and covers the term-bank clusters assigned to each page. Neither invents a page that is not in the CSV.
 
-Add a `## Site Architecture` section to the site's `CLAUDE.md` pointing at both files, so future sessions change the map before they change the site.
+Add a `## Site Architecture` section to the site's `CLAUDE.md` pointing at all three files (`site-architecture.csv`, `site-architecture.mmd`, `lsi-terms.csv`), so future sessions change the map and the term bank before they change the site.
 
 ---
 
@@ -443,6 +477,8 @@ Pass this context:
 Provide the same full business data. Instruct it to write all page content: titles, meta descriptions, H1s, body copy, FAQs, CTAs, stat items, and breadcrumb labels for every page (homepage, about, contact, services index, each service page, locations index, each location page).
 
 Pass the same context as tech-builder, plus the design personality preference so the writer knows to keep hero H1s short (4-8 words) for large-scale display and to structure stats as number + label pairs. Also pass the niche-scout findings from STEP 1 (uncontested keyword clusters, true market gaps) so the writer can target that language and those topics directly in copy, not just generic service/location content.
+
+**Also pass `docs/lsi-terms.csv` from STEP 7 and require the writer to cover the clusters assigned to each page.** The geographic half of that file is what the 45% local-specificity rule is measured against. The topical half is the one that decides whether the site can hold informational rankings at all — it must show up primarily as *why*-FAQs on the service pages, at least two per page, including one that answers the niche's central customer misconception head-on. Require `LSI_TERMS_USED` and `UNVERIFIED_CLAIMS` in the returned deliverable; the audit in STEP 12 checks both.
 
 Wait for both agents to complete before proceeding to STEP 9.
 
