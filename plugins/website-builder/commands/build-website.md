@@ -243,6 +243,11 @@ The site's page structure, keyword targeting and internal linking plan live in `
 
 **Change the map before you change the site.** Adding a page, retargeting a keyword, or restructuring nesting means updating the CSV first, so the cannibalization guard (one primary keyword per page, enforced unique) and the internal linking plan stay intact. A page that exists but is not in the CSV is a bug.
 
+## Indexing
+The site is submitted to Google Search Console, Bing Webmaster Tools and IndexNow (STEP 16 of the build). If `public/` contains a bare `{hex}.txt` file, **that is the IndexNow API key file and it must stay there permanently.** IndexNow re-validates by fetching it from the domain root on every submission, so deleting it silently 403s all future submissions to Bing, Yandex, Naver, Seznam and Yep.
+
+Re-submit after publishing new pages: `submit_url_for_google_indexing` and `submit_url_to_index_now`, then verify with `check_google_indexing_status` / `check_index_now_status`.
+
 ## URL Convention
 `astro.config.mjs` sets `trailingSlash: 'always'`. Cloudflare serves pages at directory URLs and redirects the slashless form, so the slash form is the real address. Anything that emits a URL — canonical, sitemap, internal links, breadcrumb schema, `llms.txt`, the WebMCP search index — has to carry the slash, or it points at a redirect and Google sees a canonical it has to follow. Extensionless API routes are covered by the rule too (`fetch('/api/contact/')`); routes with a file extension (`/api/search.json`) are exempt. Do not change this convention after launch — switching it on an indexed site forces a re-crawl.
 
@@ -666,6 +671,10 @@ Present a clean summary to the user:
 - `llms.txt` documents the tools, the real services, and real contact details
 - Leads an AI agent submits arrive with `[Agent] ` in the notification email subject and a `Source` row in the details table, so you can tell them from human form fills
 
+### Search Engine Submission
+- Status: [done in STEP 16 / pending — site not yet live]
+- Google Search Console, Bing Webmaster Tools and IndexNow all covered in STEP 16 once the domain resolves
+
 ### Design QA
 - Impeccable audit: [PASS / findings logged and accepted — see below]
 - CLAUDE.md written to project root with tech stack, WebP rule, Core Web Vitals targets, SEO Utils workspace, and niche-scout findings
@@ -682,6 +691,7 @@ Everything so far is local only — nothing has been pushed to GitHub or deploye
 3. Connect Cloudflare to that GitHub repo: Cloudflare Dashboard → Workers & Pages → Create → **Connect to Git** → select the repo → set build command `npm run build`, and let it detect the Astro/`@astrojs/cloudflare` output. This is a one-time setup. From here on, **every deploy is just a `git push` to `main`** — Cloudflare automatically pulls and builds. Do not run `npx wrangler deploy` to ship code changes; see the Deployment Policy at the top of this command and the `## Deployment` section this build wrote into the site's `CLAUDE.md`.
 4. Set the email secret: `npx wrangler secret put BREVO_API_KEY` (paste your Brevo API key when prompted — never stored in a file). This is a secret binding, not a code deploy, so it's fine to run directly and doesn't conflict with the Git-integration workflow above.
 5. Point your domain in Cloudflare Dashboard
+6. **Come back for STEP 16 once the domain is live** — search engine submission (Google Search Console, Bing Webmaster Tools, IndexNow). It needs a live URL, so it cannot run before this point, and skipping it leaves a finished site waiting on organic discovery.
 
 ### Analytics Setup (Manual — Google Dashboards)
 Claude cannot log into Google's dashboards directly, so these are done by you, with Claude able to write any supporting code (GTM snippet install, dataLayer events) on request.
@@ -698,10 +708,7 @@ Claude cannot log into Google's dashboards directly, so these are done by you, w
 5. Top right → **Submit → Publish** (GTM changes only go live after publishing).
 6. In GA4 Admin → Events, mark `generate_lead` as a **key event** (conversion).
 
-**Google Search Console:**
-1. Add a **Domain property** (not URL-prefix) for the bare domain — covers http/https and www/non-www together. Verify via the DNS TXT record it gives you, added at your DNS provider.
-2. Submit the sitemap: `/sitemap-index.xml`.
-3. URL-inspect and request indexing for the homepage and each location/service page.
+**Google Search Console / Bing / IndexNow:** handled properly in STEP 16, not here. Search Console is an indexing surface, not an analytics one, and it needs the site live first.
 
 **Link GA4 to Search Console:** GA4 Admin → Product Links → Search Console Links → link this property, so query/impression data surfaces inside GA4 reports.
 
@@ -726,3 +733,99 @@ Set the **baseline grid scan now**, at launch, even before the client's own Goog
 - **Agentic Browsing:** run Lighthouse > Agentic Browsing on the live domain and confirm `webmcp-schema-validity` and `llms-txt-presence` pass. To see the tools directly, open the contact page in Chrome Canary with `chrome://flags/#enable-webmcp-testing` enabled, then run `await navigator.modelContext.getTools()` in the DevTools console — expect all three tools there, two on pages without the contact form.
 - Contact form: test end-to-end submission, then confirm in GTM Preview mode and GA4 Realtime that `contact_form_submit` / `generate_lead` actually fire
 ```
+
+---
+
+## STEP 16: Search Engine Submission & Indexing
+
+The last step, and the only one that **requires the site to be live at its real domain**. A site nobody submitted is a site nobody finds, and "I assumed it would get crawled eventually" is how a finished build sits unindexed for weeks.
+
+Start by asking:
+
+> "Is the site live at its final domain yet? (STEP 15 covered deploying and pointing the domain.) I can only submit a live URL — if it isn't up, say so and I'll leave you the checklist to run later."
+
+**If it is not live, stop here** and hand over the rest of this step as a written checklist. Do not submit a staging URL, a `*.workers.dev` URL, or a domain that has not finished propagating. Submitting the wrong hostname is worse than submitting nothing.
+
+### 1. Pre-flight: is it actually indexable?
+
+Never submit a site that cannot be indexed. Each of these is cheap and each catches a launch-day disaster:
+
+```bash
+curl -sI https://YOUR_DOMAIN.com/ | head -1                      # 200, not 3xx/4xx/5xx
+curl -s  https://YOUR_DOMAIN.com/robots.txt                      # allows crawling, references the sitemap
+curl -sI https://YOUR_DOMAIN.com/sitemap-index.xml | head -1     # 200
+curl -s  https://YOUR_DOMAIN.com/ | grep -i 'noindex'            # must return nothing
+curl -s  https://YOUR_DOMAIN.com/ | grep -o '<link rel="canonical"[^>]*>'
+```
+
+- The canonical must be **self-referential and absolute**, on the final domain, with the trailing slash.
+- Spot-check that a sitemap URL and its page's canonical agree exactly. A sitemap full of URLs that redirect is a crawl-budget leak and, on a small site, a real indexing delay.
+- Confirm the domain resolves to the live site, not a parked page or a redirect from the apex to www (or vice versa) that disagrees with the canonical.
+
+Fix anything failing here **before** submitting. Search engines cache a bad first impression.
+
+### 2. Google Search Console (manual, then automated)
+
+Claude cannot log into Google's dashboards. These are Andy's to do:
+
+1. Add a **Domain property** (not URL-prefix) for the bare domain — it covers http/https and www/non-www together. Verify with the DNS TXT record it provides, added at the DNS provider (Cloudflare, if the domain is there).
+2. Submit the sitemap: `/sitemap-index.xml`.
+3. Connect the property to SEO Utils: Settings → Google OAuth Tokens → Connect, or configure a Google Service Account if this is an agency-scale setup.
+
+Once GSC is connected in SEO Utils, the rest is automatable:
+
+- **`submit_url_for_google_indexing`** on the priority URLs: homepage, every service page, every location page. Do not bulk-submit legal pages.
+- **`trigger_indexing_action`** to run an inspection scan, so URL statuses populate.
+- **`check_google_indexing_status`** to confirm what Google actually has, rather than assuming submission equals indexing.
+
+Note the Indexing Dashboard has an **Auto Submit for Indexing** toggle with a resubmission cooldown (default 7 days). Turning it on means new and not-indexed URLs get resubmitted without being asked.
+
+### 3. Bing Webmaster Tools (manual)
+
+Bing is not optional. It feeds Copilot and ChatGPT search, so it matters more now than its raw market share suggests.
+
+1. Go to https://www.bing.com/webmasters/tools and add the site.
+2. **Verify by importing from Google Search Console** — it is one click and carries the property across. Only fall back to DNS/meta-tag verification if the import fails.
+3. Submit `/sitemap-index.xml`.
+4. Optional but useful: Settings → API access → API Key. SEO Utils can use the Bing Webmaster Tools API to check indexing instead of the `site:` operator, which avoids getting the IP rate-limited on bulk checks.
+
+### 4. IndexNow (covers Bing, Yandex, Naver, Seznam, Yep in one submission)
+
+This is the fastest path to non-Google indexing and it is almost entirely automatable — but there is one build-specific step that silently breaks it if missed.
+
+1. Generate an API key at https://www.bing.com/indexnow/getstarted and download the key file.
+2. **Put the key file in `public/` and redeploy.** IndexNow validates by fetching the key file from the **root of the domain** (`https://YOUR_DOMAIN.com/{key}.txt`). In an Astro project, `public/` is what lands at the site root, so the file goes at `public/{key}.txt`, then commit and `git push` — Cloudflare rebuilds and serves it. Confirm with:
+
+   ```bash
+   curl -s https://YOUR_DOMAIN.com/{key}.txt    # must return the key, not a 404
+   ```
+
+   This file must stay in the repo permanently. Deleting it breaks every future submission.
+3. In SEO Utils → IndexNow: Import URLs from the sitemap, then open the site's settings (cog icon) and paste the API key.
+4. **`submit_url_to_index_now`** for every page on the site.
+5. **`check_index_now_status`** to verify.
+
+Two known messages, neither of which is a real failure on a fresh setup:
+- *"URL received. IndexNow key validation pending"* — normal for a couple of minutes after adding a new key, while IndexNow fetches the key file.
+- *"403 Forbidden: User is unauthorized to access the site"* — the key is wrong or the key file is not actually at the root. Re-run the `curl` above. If it persists, regenerate the key and redo the setup.
+
+SEO Utils also runs this on a schedule once configured: it pulls sitemap URLs daily at 5:00 AM local, checks index at 6:00 AM, and auto-submits every 10 minutes. That only runs while the app is open.
+
+### 5. Report what actually happened
+
+Do not report "submitted" as a synonym for "indexed". State both, per surface:
+
+```
+### Search Engine Submission
+- Pre-flight: [PASS / issues found and fixed]
+- Google Search Console: property added [domain/url-prefix], sitemap submitted, [N] URLs submitted via the Indexing API
+- Google indexing status: [N] indexed, [N] submitted-pending, [N] excluded — with reasons
+- Bing Webmaster Tools: site added, verified via [GSC import / DNS], sitemap submitted
+- IndexNow: key file live at /{key}.txt, [N] URLs submitted
+- IndexNow status: [N] confirmed, [N] pending
+- Still outstanding: [anything Andy has to finish in a dashboard]
+```
+
+Indexing takes days to weeks. Set the expectation plainly: submission gets a site into the queue, it does not put it in the index. Re-check with `check_google_indexing_status` and `check_index_now_status` after about a week rather than assuming silence means failure.
+
+---

@@ -70,6 +70,9 @@ process. If a capability below is not listed here, it is still unused.
 | GMB Rank Tracker (grid scan) | niche-scout Step 1 fallback when Playwright is blocked |
 | GMB Progress view | STEP 15 ongoing work, with a launch-day baseline scan |
 | GSC Internal Links | STEP 15 ongoing work |
+| `submit_url_for_google_indexing` / `check_google_indexing_status` | STEP 16 step 2 |
+| `trigger_indexing_action` (inspection scan) | STEP 16 step 2 |
+| IndexNow: `submit_url_to_index_now` / `check_index_now_status` | STEP 16 step 4 |
 
 **Known live defect this closed:** niche-scout called `get_keyword_suggestions` and
 `check_keyword_metrics` with no `source`, so every market validation silently ran on `labs`

@@ -375,6 +375,9 @@ public/
 ├── llms.txt
 ├── _headers
 └── images/
+                    (an IndexNow key file, {hex}.txt, is added here at STEP 16
+                     once the site is live — do not create it at build time,
+                     and never delete it once it exists)
     ├── (hero.webp placeholder)
     ├── services/
     └── locations/
