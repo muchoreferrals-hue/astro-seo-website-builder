@@ -3,7 +3,7 @@
 Running notes on SEO Utils features that materially affect ranking work, built from the
 changelog at https://help.seoutils.app/changelog.
 
-**Last reviewed:** 2026-09-24 — covered through **v2.5.0** (reviewed v2.2.0–v2.5.0).
+**Last reviewed:** 2026-11-10 — covered through **v2.14.2** (reviewed v2.6.0–v2.14.2).
 
 Maintained by a scheduled cloud routine that re-reads the changelog every 3 days. When new
 releases land, the routine appends what matters here and bumps the "Last reviewed" line
@@ -54,6 +54,28 @@ Shares scraped SERP results between keywords differing only in word order, cutti
 affordable. Local keyword sets are full of word-order variants ("pet waste removal keswick"
 vs "keswick pet waste removal").
 
+### GSC Rank Tracker (v2.10.0, built out through v2.14.2)
+A new rank tracker built on Search Console data instead of DataForSEO scraping: daily
+positions, Movers, Alerts, a Pages tab, a Before/after tab, CTR gap and Opportunity
+columns, an Opportunity-scoring improvement (v2.14.2), and a comparison view against the
+existing DataForSEO-based Organic Rank Tracker report.
+
+**Why it matters:** this is free (GSC data, no DataForSEO credit) and gives a second,
+independent read on rankings to cross-check the paid Organic Rank Tracker. The CTR gap /
+Opportunity columns are a genuine opportunity-finder for a small site: they surface pages
+that already rank but underperform on CTR, which on a 5–15 page local site is exactly the
+kind of low-cost win (rewrite a title/meta) worth chasing before spending credits on new
+keyword research. Not yet wired into the build process below — worth adding to STEP 15
+ongoing work alongside GMB Progress and GSC Internal Links.
+
+### Rank-result "poisoning" re-check (v2.12.0)
+Automatically flags and re-checks rank results that look corrupted or personalized
+(poisoned) instead of accepting them as-is.
+
+**Why it matters:** rank position is the core number Andy watches per site. A single
+poisoned scrape showing a fake drop (or fake gain) is indistinguishable from a real ranking
+change unless the tool catches it — this closes that gap automatically.
+
 ---
 
 ## Where each of these is wired into the build
@@ -78,10 +100,29 @@ process. If a capability below is not listed here, it is still unused.
 `check_keyword_metrics` with no `source`, so every market validation silently ran on `labs`
 — the one source documented to reject Ontario. Every site this skill builds is in Ontario.
 
+**Historical defect, now fixed (v2.14.0):** the Organic Rank Tracker could mark a page that
+was actually ranked as unranked. If any site's history shows a sudden "lost ranking" that
+dropped to unranked before Oct 30, 2026 and recovered with no corresponding site change,
+treat it as this bug, not a real ranking loss.
+
 ---
 
 ## Lower priority / situational
 
+- **AI Visibility** (v2.8.0, agent actions v2.10.0, exports/client report v2.9.0) — tracks
+  brand/business share of voice in AI chat answers (ChatGPT, Gemini, etc.) against named
+  competitors. More useful for established brands people ask AI assistants about by name
+  than for a brand-new rank-and-rent site with no name recognition yet; worth revisiting
+  once a site has built up some direct-search volume.
+- **Content Gap — Shared keywords mode** (v2.14.2) — shows keywords multiple competitors
+  rank for in common. Useful for finding the "everyone in town has a page for this" keyword
+  set a new local site is missing.
+- **Internal Links (GSC) agent/MCP actions** (v2.7.0) — the existing Internal Links
+  capability (already wired into STEP 15) can now be triggered via MCP action instead of
+  only through the UI, which makes it automatable.
+- **Scheduled LLM Rank Tracker credit-waste fix** (v2.14.1) — scheduled runs no longer
+  repeat and burn credit when an engine returns no answer. Only matters if LLM Rank
+  Tracker / AI Visibility scheduled checks are in use.
 - **Organic Rank Tracker imports** (v2.5.0) — from True Ranker, SEO PowerSuite, Agency
   Analytics. Relevant when migrating an existing client off another tool.
 - **Content Gap + Ads Vision auto-save keyword metrics** (v2.4.0) — metrics from these
