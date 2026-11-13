@@ -3,7 +3,7 @@
 Running notes on SEO Utils features that materially affect ranking work, built from the
 changelog at https://help.seoutils.app/changelog.
 
-**Last reviewed:** 2026-11-10 — covered through **v2.14.2** (reviewed v2.6.0–v2.14.2).
+**Last reviewed:** 2026-11-13 — covered through **v2.15.0** (reviewed v2.6.0–v2.15.0).
 
 Maintained by a scheduled cloud routine that re-reads the changelog every 3 days. When new
 releases land, the routine appends what matters here and bumps the "Last reviewed" line
@@ -136,3 +136,12 @@ treat it as this bug, not a real ranking loss.
 - **SERP Data Importer background mode** (v2.2.0).
 - **Stability fixes** (v2.3.0) — Organic Rank Tracker no longer hangs when DataForSEO
   credentials are missing.
+- **GA4 Traffic integration** (v2.15.0) — syncs Google Analytics 4 (all channels, not just
+  organic) into Your Sites: sessions, key events, and revenue by channel/source/month vs. an
+  earlier period. The GSC Rank Tracker now shows sessions and key events per keyword's page,
+  and Organic/GSC Rank Tracker exports and published client reports get a Traffic tab.
+  **Why it matters:** only worth turning on once a site has GA4 plus key-event tracking
+  (call/lead-form tracking) actually configured — then it ties a specific ranked page to
+  real conversions instead of just position, which is the real test of whether that page
+  deserves more internal links or content work, and gives something concrete to show a
+  renting client. Not useful on a brand-new site with no conversion tracking set up yet.
