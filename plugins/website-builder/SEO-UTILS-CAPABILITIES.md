@@ -3,7 +3,7 @@
 Running notes on SEO Utils features that materially affect ranking work, built from the
 changelog at https://help.seoutils.app/changelog.
 
-**Last reviewed:** 2026-11-13 — covered through **v2.15.0** (reviewed v2.6.0–v2.15.0).
+**Last reviewed:** 2026-11-16 — covered through **v2.16.0** (reviewed v2.6.0–v2.16.0).
 
 Maintained by a scheduled cloud routine that re-reads the changelog every 3 days. When new
 releases land, the routine appends what matters here and bumps the "Last reviewed" line
@@ -68,6 +68,18 @@ kind of low-cost win (rewrite a title/meta) worth chasing before spending credit
 keyword research. Not yet wired into the build process below — worth adding to STEP 15
 ongoing work alongside GMB Progress and GSC Internal Links.
 
+### GMB Rank Tracker — Local Pack and Local Finder results (v2.16.0)
+GMB Rank Tracker now tracks three distinct Google local result types, not just Maps: a list
+switcher moves the whole report — history, Compare, report groups, exports — between Google
+Maps, the Local Pack, and the Local Finder.
+
+**Why it matters:** "map-pack ranking" for a local service search usually means the 3-pack
+shown on a plain "service + town" search (Local Pack), which is a different, usually harder
+result to hold than general Google Maps placement. Until now GMB Rank Tracker could only
+confirm Maps position. Check Local Pack position specifically on every GMB Progress check
+going forward — a site can look strong on Maps while still missing the 3-pack that actually
+drives local calls.
+
 ### Rank-result "poisoning" re-check (v2.12.0)
 Automatically flags and re-checks rank results that look corrupted or personalized
 (poisoned) instead of accepting them as-is.
@@ -123,8 +135,15 @@ treat it as this bug, not a real ranking loss.
 - **Scheduled LLM Rank Tracker credit-waste fix** (v2.14.1) — scheduled runs no longer
   repeat and burn credit when an engine returns no answer. Only matters if LLM Rank
   Tracker / AI Visibility scheduled checks are in use.
-- **Organic Rank Tracker imports** (v2.5.0) — from True Ranker, SEO PowerSuite, Agency
-  Analytics. Relevant when migrating an existing client off another tool.
+- **Organic Rank Tracker imports** (v2.5.0, extended v2.16.0) — from True Ranker, SEO
+  PowerSuite, Agency Analytics, and now Semrush Position Tracking (CSV: rank, ranking page,
+  volume, CPC, intent, tags). Relevant when migrating an existing client off another tool.
+- **Log File Analysis bot-list fix** (v2.16.0) — Claude-User and Perplexity-User hits were
+  being counted as human traffic; both are now checked against their companies' published
+  bot IP ranges before being counted as human. Also: Claude-SearchBot is now recognized,
+  ClaudeBot moved from the AI Answer category to AI Training, and Google-Extended was
+  dropped from the bot list. Only matters if Log File Analysis is in active use — fixes a
+  historical overcount of "human" traffic on sites getting AI-answer-engine crawler visits.
 - **Content Gap + Ads Vision auto-save keyword metrics** (v2.4.0) — metrics from these
   tools now persist to `keyword_metrics`, so they're queryable later via `query_database`.
 - **GSC automatic checks spread over 30-day cycles** (v2.4.0) rather than batch processing.
