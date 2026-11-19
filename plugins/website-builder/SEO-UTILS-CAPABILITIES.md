@@ -3,7 +3,7 @@
 Running notes on SEO Utils features that materially affect ranking work, built from the
 changelog at https://help.seoutils.app/changelog.
 
-**Last reviewed:** 2026-11-16 — covered through **v2.16.0** (reviewed v2.6.0–v2.16.0).
+**Last reviewed:** 2026-11-19 — covered through **v2.17.0** (reviewed v2.6.0–v2.17.0).
 
 Maintained by a scheduled cloud routine that re-reads the changelog every 3 days. When new
 releases land, the routine appends what matters here and bumps the "Last reviewed" line
@@ -80,13 +80,20 @@ confirm Maps position. Check Local Pack position specifically on every GMB Progr
 going forward — a site can look strong on Maps while still missing the 3-pack that actually
 drives local calls.
 
-### Rank-result "poisoning" re-check (v2.12.0)
+### Rank-result "poisoning" re-check (v2.12.0, opt-in verification extended v2.17.0)
 Automatically flags and re-checks rank results that look corrupted or personalized
-(poisoned) instead of accepting them as-is.
+(poisoned) instead of accepting them as-is. v2.17.0 adds an opt-in, paid extension of this:
+the Organic Rank Tracker can check each fetched results page against Google's own Web
+results and replace organics that look poisoned (off by default, costs one extra results
+page per keyword), and Check SERP / SERP Similarity / the keyword SERP card can do the same
+live-lookup verification for $0.002 + ~20 extra seconds per lookup.
 
 **Why it matters:** rank position is the core number Andy watches per site. A single
 poisoned scrape showing a fake drop (or fake gain) is indistinguishable from a real ranking
-change unless the tool catches it — this closes that gap automatically.
+change unless the tool catches it — this closes that gap automatically for free by default.
+Turn on the v2.17.0 paid verification only when a specific result looks like a fluke worth
+double-checking (e.g. a sudden unexplained jump/drop before telling Andy about it) — leaving
+it on for every tracker/lookup adds real credit cost for marginal benefit on small sites.
 
 ---
 
@@ -117,6 +124,13 @@ was actually ranked as unranked. If any site's history shows a sudden "lost rank
 dropped to unranked before Oct 30, 2026 and recovered with no corresponding site change,
 treat it as this bug, not a real ranking loss.
 
+**Historical defect, now fixed (v2.17.0):** Search Console Performance totals, the chart,
+and the keyword/page lists did not match Google's real numbers whenever a filter (country,
+device, etc.) was applied — the filtered view read stale/wrong underlying data instead of
+what Google itself uses. This also broke the CSV export, which largely ignored filters. Any
+GSC analysis you ran filtered by country (e.g. Canada-only) or device before Nov 18, 2026 is
+suspect — re-pull it rather than trusting the old numbers; filtered views are now correct.
+
 ---
 
 ## Lower priority / situational
@@ -144,6 +158,9 @@ treat it as this bug, not a real ranking loss.
   ClaudeBot moved from the AI Answer category to AI Training, and Google-Extended was
   dropped from the bot list. Only matters if Log File Analysis is in active use — fixes a
   historical overcount of "human" traffic on sites getting AI-answer-engine crawler visits.
+  v2.17.0 adds a genuine human-page-views count (a Humans view on the Pages tab, plus a Logs
+  vs GA4 vs Search Console comparison card on the Overview) on top of this fix — existing
+  reports need logs re-uploaded or the log source re-run to show it.
 - **Content Gap + Ads Vision auto-save keyword metrics** (v2.4.0) — metrics from these
   tools now persist to `keyword_metrics`, so they're queryable later via `query_database`.
 - **GSC automatic checks spread over 30-day cycles** (v2.4.0) rather than batch processing.
