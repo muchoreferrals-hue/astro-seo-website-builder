@@ -3,7 +3,7 @@
 Running notes on SEO Utils features that materially affect ranking work, built from the
 changelog at https://help.seoutils.app/changelog.
 
-**Last reviewed:** 2026-11-19 — covered through **v2.17.0** (reviewed v2.6.0–v2.17.0).
+**Last reviewed:** 2026-11-25 — covered through **v2.18.0** (reviewed v2.6.0–v2.18.0).
 
 Maintained by a scheduled cloud routine that re-reads the changelog every 3 days. When new
 releases land, the routine appends what matters here and bumps the "Last reviewed" line
@@ -12,7 +12,42 @@ to miss and limitations that can be mistaken for real findings.
 
 ---
 
+## Surface globally
+
+**Always pass an explicit country/location code on SEO Utils keyword and SERP lookups
+(MCP actions or UI).** A bug fixed in v2.18.0 meant a keyword/SERP lookup whose location
+code was sent as a bare number, or with no country specified at all, silently ran against
+the United States instead of erroring. A Canadian (Ontario) lookup made that way could have
+been stored as US data with nothing to flag it as wrong — the same "looks like a real
+result but isn't" trap as the existing `labs` source rejecting Ontario. It's fixed now
+(malformed calls are refused outright rather than silently defaulting), but since every site
+this skill builds targets Ontario, always specify the country/location explicitly on every
+keyword or SERP call rather than relying on a default. If any keyword or SERP data pulled
+before Nov 24, 2026 looks off for a Canadian market, re-check it — it may be mislabeled US
+data from this bug.
+
+---
+
 ## Highest-value capabilities to actually use
+
+### GMB Rank Tracker — Google Business Profile performance data & alerts (v2.18.0)
+Connect a Google account and GMB Rank Tracker shows live Business Profile results next to
+grid ranks: calls, website clicks, direction requests, profile views, a Performance tab, an
+Actions (30 days) column, how many searches surfaced the profile, reviews, and profile-edit
+history — a profile can be tracked for this data without running rank tracking at all. New
+alerts (falling actions, a low-star review, a profile change) can email or webhook through a
+new automation trigger. GMB PDF/HTML reports can include this data, with a results-only
+PDF/CSV/Excel export and a toggle for whether client-published reports show it. All of it is
+also readable through MCP/AI-app actions.
+
+**Why it matters:** this is the first time GMB Rank Tracker ties grid/Local-Pack position to
+the thing that actually pays the bills — calls, website clicks, and direction requests — in
+one place, and it costs nothing beyond the existing Google account connection (no DataForSEO
+credit). On a rank-and-rent site, "we hold position 2 in the pack" is a weak pitch; "we hold
+position 2 and it generated 40 calls this month" is the pitch, and the client-report toggle
+makes that easy to hand to a renting client. The alerts also catch a bad review or an
+unauthorized profile edit — a known way a competitor or a Google-suggested edit quietly
+costs a month of calls — before it shows up as an unexplained rank or traffic drop.
 
 ### Keyword metrics source selector (v2.4.0, extended v2.5.0)
 Six selectable DataForSEO sources: `labs` (default, cheapest, has gaps), `google_ads`
@@ -80,20 +115,24 @@ confirm Maps position. Check Local Pack position specifically on every GMB Progr
 going forward — a site can look strong on Maps while still missing the 3-pack that actually
 drives local calls.
 
-### Rank-result "poisoning" re-check (v2.12.0, opt-in verification extended v2.17.0)
+### Rank-result "poisoning" re-check (v2.12.0, opt-in verification extended v2.17.0, pricing change v2.18.0)
 Automatically flags and re-checks rank results that look corrupted or personalized
 (poisoned) instead of accepting them as-is. v2.17.0 adds an opt-in, paid extension of this:
 the Organic Rank Tracker can check each fetched results page against Google's own Web
 results and replace organics that look poisoned (off by default, costs one extra results
 page per keyword), and Check SERP / SERP Similarity / the keyword SERP card can do the same
-live-lookup verification for $0.002 + ~20 extra seconds per lookup.
+live-lookup verification for $0.002 + ~20 extra seconds per lookup. GSC Rank Tracker's own
+"Check live SERP" now runs this same live verification too.
 
 **Why it matters:** rank position is the core number Andy watches per site. A single
 poisoned scrape showing a fake drop (or fake gain) is indistinguishable from a real ranking
 change unless the tool catches it — this closes that gap automatically for free by default.
-Turn on the v2.17.0 paid verification only when a specific result looks like a fluke worth
+Turn on the paid verification only when a specific result looks like a fluke worth
 double-checking (e.g. a sudden unexplained jump/drop before telling Andy about it) — leaving
 it on for every tracker/lookup adds real credit cost for marginal benefit on small sites.
+**As of v2.18.0 this got more expensive:** the live verification includes converting
+Google's redirect links, which DataForSEO starts billing separately from Nov 30, 2026
+($0.004/keyword at depth 100) — keep it strictly opt-in, per-keyword, not a standing setting.
 
 ---
 
@@ -130,6 +169,23 @@ device, etc.) was applied — the filtered view read stale/wrong underlying data
 what Google itself uses. This also broke the CSV export, which largely ignored filters. Any
 GSC analysis you ran filtered by country (e.g. Canada-only) or device before Nov 18, 2026 is
 suspect — re-pull it rather than trusting the old numbers; filtered views are now correct.
+
+**Historical defect, now fixed (v2.18.0):** GMB Rank Tracker double-counted a business
+stored twice at the same grid point, producing negative averages, "N/a" values, and shares
+over 100% on some grid reports. Any GMB grid/Progress report showing those symptoms before
+Nov 24, 2026 reflects this bug, not a real local-ranking collapse — re-run the grid scan
+rather than trusting the old numbers.
+
+**Historical defect, now fixed (v2.18.0):** Sitemap pulls in Search Console and IndexNow
+silently saved zero pages when the sitemap's `<lastmod>` dates used certain formats (a date
+alone on its own line, or a short form like `2026-11`). If a site's sitemap/IndexNow
+coverage looked empty before Nov 24, 2026, that's a reason to re-pull it before concluding
+the sitemap itself is broken or missing.
+
+**Historical defect, now fixed (v2.18.0):** the Search Console Indexing page's link crawler
+saved Chrome error pages as if they were real page text and deleted the links a page had
+previously been found to have, instead of keeping the last good crawl. If GSC Internal Links
+data for a page looks thin or wrong, re-crawl it rather than trusting an old crawl.
 
 ---
 
@@ -172,6 +228,17 @@ suspect — re-pull it rather than trusting the old numbers; filtered views are 
 - **SERP Data Importer background mode** (v2.2.0).
 - **Stability fixes** (v2.3.0) — Organic Rank Tracker no longer hangs when DataForSEO
   credentials are missing.
+- **Keyword Explorer Check Metrics fix** (v2.18.0) — Check Metrics on Autocomplete Keywords
+  used to buy DataForSEO metrics for keywords hidden by your filters (wasted credit), and the
+  Intent filter did nothing; both are fixed, and Check Metrics now waits for a running
+  autocomplete job instead of racing it. Only matters if you use Autocomplete + Check Metrics
+  together, but worth knowing since the old behavior silently spent credit on keywords you
+  thought you'd excluded.
+- **LLM Rank Tracker PDF export + automation** (v2.18.0) — a one-click PDF (key figures,
+  visibility trends, top search terms, brands, competitors, citations, sentiment) and a "run
+  completed" automation trigger that can export it, email it, or call a webhook. Same
+  caveat as AI Visibility above: matters once a site has brand-name recognition worth
+  tracking in AI answers, not for a brand-new rank-and-rent site.
 - **GA4 Traffic integration** (v2.15.0) — syncs Google Analytics 4 (all channels, not just
   organic) into Your Sites: sessions, key events, and revenue by channel/source/month vs. an
   earlier period. The GSC Rank Tracker now shows sessions and key events per keyword's page,
